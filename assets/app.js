@@ -22,6 +22,8 @@
     channelRows: document.getElementById("channelRows"),
     globalFeedbackLink: document.getElementById("globalFeedbackLink"),
     feedbackPanelLink: document.getElementById("feedbackPanelLink"),
+    sourceMetaTotal: document.getElementById("sourceMetaTotal"),
+    sourceMetaDate: document.getElementById("sourceMetaDate"),
   };
 
   function issueUrl(channel) {
@@ -203,6 +205,15 @@
     elements.channelRows.innerHTML = visible.map(rowMarkup).join("");
   }
 
+  function initSourceMeta() {
+    if (elements.sourceMetaTotal) {
+      elements.sourceMetaTotal.textContent = `${formatNumber(data.summary.total)}チャンネル`;
+    }
+    if (elements.sourceMetaDate) {
+      elements.sourceMetaDate.textContent = String(data.summary.sourceReportAt || "").slice(0, 10) || "-";
+    }
+  }
+
   function initFeedbackLinks() {
     const url = issueUrl();
     if (elements.globalFeedbackLink) elements.globalFeedbackLink.href = url;
@@ -211,6 +222,7 @@
 
   function init() {
     elements.generatedAt.textContent = formatDate(data.summary.generatedAt);
+    initSourceMeta();
     initFeedbackLinks();
     renderSummary();
     renderRows();
