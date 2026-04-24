@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="YouTubeチャンネルが収益化停止または未収益化の可能性があるかを、公開動画上の外部観測データから整理した暫定レポート。">
+    <title>YouTube収益化停止 可能性リスト</title>
+    <link rel="stylesheet" href="assets/styles.css?v=20260425-4">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-top">
+        <span class="publication">YouTube Monetization Watch</span>
+        <span id="generatedAt">更新日時を読み込み中</span>
+      </div>
+      <div class="header-inner">
+        <p class="eyebrow">外部観測による暫定調査</p>
+        <h1><span>YouTube</span>収益化停止<br>可能性リスト</h1>
+        <p class="lead">
+          収益化停止・未収益化の可能性があるチャンネルを探しやすくするため、
+          公開動画ページ上の広告表示シグナルを機械的に集計したデータベースです。
+        </p>
+        <p class="header-actions">
+          <a id="globalFeedbackLink" class="report-link report-link-primary" href="https://github.com/Kyosuke-Shige/youtube-monetization-watch/issues/new" target="_blank" rel="noopener noreferrer">修正・情報提供</a>
+        </p>
+        <dl class="source-meta">
+          <div><dt>対象</dt><dd>494チャンネル</dd></div>
+          <div><dt>判定</dt><dd>直近最大5動画</dd></div>
+          <div><dt>作成</dt><dd>2026-04-23</dd></div>
+        </dl>
+      </div>
+    </header>
+
+    <main>
+      <section class="notice" aria-label="注意事項">
+        <strong>断定ではありません。</strong>
+        本ページはYouTube公式・各チャンネル運営者による収益化ステータスの確認結果ではありません。
+        「収益化停止/未収益化の可能性が高い」は、外部から観測できる広告表示シグナルが弱かったチャンネルを指します。
+        誤判定を含む可能性があるため、個別チャンネルへの攻撃や断定的な拡散は避けてください。
+      </section>
+
+      <section class="feedback-panel" aria-label="修正・情報提供">
+        <div>
+          <p class="section-label">Feedback</p>
+          <h2>間違った情報・収益化停止チャンネルの情報を集めています</h2>
+          <p>
+            収益化停止ではない、収益化停止の可能性がある、復旧した、掲載を見直してほしい、といった情報があれば送ってください。
+            根拠URLや確認日時がある情報を優先して確認し、次回更新で反映または判定保留への変更を検討します。
+          </p>
+        </div>
+        <a id="feedbackPanelLink" class="report-link report-link-primary" href="https://github.com/Kyosuke-Shige/youtube-monetization-watch/issues/new" target="_blank" rel="noopener noreferrer">情報提供フォームを開く</a>
+      </section>
+
+      <section class="summary-grid" id="summaryGrid" aria-label="集計サマリ"></section>
+
+      <section class="toolbar" aria-label="絞り込み">
+        <label class="search-box">
+          <span>検索</span>
+          <input id="searchInput" type="search" placeholder="チャンネル名・ID・発見元">
+        </label>
+        <label>
+          <span>判定</span>
+          <select id="resultFilter">
+            <option value="all">すべて</option>
+            <option value="likely_not_monetized">収益化停止/未収益化の可能性が高い</option>
+            <option value="inconclusive">判定保留</option>
+            <option value="failed">取得失敗</option>
+            <option value="likely_monetized">収益化中の可能性が高い</option>
+          </select>
+        </label>
+        <label>
+          <span>信頼度</span>
+          <select id="confidenceFilter">
+            <option value="all">すべて</option>
+            <option value="high">高</option>
+            <option value="medium">中</option>
+            <option value="low">低</option>
+          </select>
+        </label>
+        <label>
+          <span>並び替え</span>
+          <select id="sortSelect">
+            <option value="risk">停止可能性/保留を上へ</option>
+            <option value="subscribers">登録者数</option>
+            <option value="latest">最新投稿</option>
+            <option value="name">チャンネル名</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="table-section">
+        <div class="table-head">
+          <div>
+            <p class="section-label">Channel Database</p>
+            <h2>チャンネル一覧</h2>
+          </div>
+          <p id="visibleCount"></p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>チャンネル</th>
+                <th>判定</th>
+                <th>信頼度</th>
+                <th>登録者数</th>
+                <th>最新投稿</th>
+                <th>広告陽性率</th>
+                <th>発見元</th>
+                <th>修正</th>
+              </tr>
+            </thead>
+            <tbody id="channelRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="method">
+        <div>
+          <p class="section-label">Method</p>
+          <h2>このリストの見方</h2>
+        </div>
+        <p>
+          「収益化停止/未収益化の可能性が高い」は、直近動画で広告表示に関する外部シグナルがほぼ見られなかった状態です。
+          YouTube Studio内部の収益化ステータス、広告制限、権利者による収益化、地域・視聴者ごとの差は確認できません。
+        </p>
+        <p>
+          そのため、このページは騒動の全体像を把握するための調査補助として使ってください。
+          掲載内容に問題がある場合は、チャンネルIDと理由を添えて連絡があれば次回更新時に修正・除外を検討します。
+        </p>
+      </section>
+    </main>
+
+    <script src="assets/data.js?v=20260425-4"></script>
+    <script src="assets/app.js?v=20260425-4"></script>
+  </body>
+</html>
