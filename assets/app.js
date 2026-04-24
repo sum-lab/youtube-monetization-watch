@@ -137,7 +137,7 @@
 
   function avatarMarkup(channel) {
     if (channel.iconUrl) {
-      return `<img class="avatar" src="${escapeHtml(channel.iconUrl)}" loading="lazy" alt="">`;
+      return `<img class="avatar" src="${escapeHtml(channel.iconUrl)}" loading="lazy" referrerpolicy="no-referrer" alt="">`;
     }
     return `<div class="avatar avatar-fallback" aria-hidden="true">${escapeHtml((channel.label || "?").slice(0, 1))}</div>`;
   }
