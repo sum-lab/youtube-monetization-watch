@@ -259,10 +259,15 @@
     }, null);
   }
 
-  function formatPeriodShort(value) {
+  function formatPeriodTickParts(value) {
     const match = String(value || "").match(/^(\d{4})H([12])$/);
-    if (!match) return String(value || "-");
-    return `${match[1]}${match[2] === "1" ? "上" : "下"}`;
+    if (!match) return { year: String(value || "-"), half: "" };
+    return { year: `${match[1]}年`, half: match[2] === "1" ? "上半期" : "下半期" };
+  }
+
+  function formatAbsPoints(value) {
+    if (value === null || value === undefined || value === "") return "-";
+    return `${Math.abs(Number(value) * 100).toFixed(1)}ポイント`;
   }
 
   function renderDashboardVerdict() {
@@ -274,16 +279,25 @@
     const deltaFromPast = pastAverage === null ? null : Number(latest.currentLikelyNotRateAmongChecked || 0) - pastAverage;
     const highest = highestRateRow(rows) || {};
     const previous = pastRows[pastRows.length - 1] || {};
+    const averageDirection = Number(deltaFromPast || 0) > 0 ? "上回る" : Number(deltaFromPast || 0) < 0 ? "下回る" : "同水準";
+    const averagePhrase =
+      Number(deltaFromPast || 0) === 0
+        ? "と同じ"
+        : `より${formatAbsPoints(deltaFromPast)}${Number(deltaFromPast || 0) > 0 ? "高く" : "低く"}`;
+    const previousPhrase =
+      Number(latest.previousRateDeltaPoints || 0) === 0
+        ? "同水準"
+        : `${formatAbsPoints(latest.previousRateDeltaPoints)}${Number(latest.previousRateDeltaPoints || 0) > 0 ? "上昇" : "低下"}`;
     elements.dashboardVerdict.innerHTML = `
       <div class="verdict-main">
-        <span>結論</span>
-        <strong>増加とは言い切れません</strong>
+        <span>比較結果</span>
+        <strong>${escapeHtml(formatPeriod(latest.period))}は過去平均を${escapeHtml(averageDirection)}</strong>
       </div>
       <p>
-        ${escapeHtml(formatPeriod(latest.period))}は${escapeHtml(formatPercent(latest.currentLikelyNotRateAmongChecked))}です。
-        ${escapeHtml(formatPeriod(previous.period))}より${escapeHtml(formatSignedPoints(latest.previousRateDeltaPoints))}ですが、
-        2023年から2025年までの平均${escapeHtml(formatPercent(pastAverage))}より${escapeHtml(formatSignedPoints(deltaFromPast))}で、
-        過去最高の${escapeHtml(formatPercent(highest.currentLikelyNotRateAmongChecked))}を下回っています。
+        現在値は${escapeHtml(formatPercent(latest.currentLikelyNotRateAmongChecked))}。
+        2023〜2025年平均${escapeHtml(formatPercent(pastAverage))}${escapeHtml(averagePhrase)}、
+        過去最高${escapeHtml(formatPercent(highest.currentLikelyNotRateAmongChecked))}（${escapeHtml(formatPeriod(highest.period))}）を下回ります。
+        直前の${escapeHtml(formatPeriod(previous.period))}からは${escapeHtml(previousPhrase)}。
       </p>
     `;
   }
@@ -299,22 +313,22 @@
     const highest = highestRateRow(rows) || {};
     const cards = [
       {
-        label: formatPeriod(latest.period),
+        label: "現在値",
         value: formatPercent(latest.currentLikelyNotRateAmongChecked),
-        detail: "収益化停止・未収益化率",
+        detail: formatPeriod(latest.period),
         tone: "blue",
       },
       {
-        label: "過去平均との差",
-        value: formatSignedPoints(deltaFromPast),
-        detail: `2023-2025平均 ${formatPercent(pastAverage)}`,
-        tone: Number(deltaFromPast || 0) > 0 ? "red" : "gray",
+        label: "比較基準",
+        value: formatPercent(pastAverage),
+        detail: "2023〜2025年平均",
+        tone: "gray",
       },
       {
-        label: "直前との差",
-        value: formatSignedPoints(latest.previousRateDeltaPoints),
-        detail: `${formatPeriod(previous.period)}比`,
-        tone: Number(latest.previousRateDeltaPoints || 0) > 0 ? "red" : "gray",
+        label: "平均との差",
+        value: formatSignedPoints(deltaFromPast),
+        detail: "現在値 - 比較基準",
+        tone: "gray",
       },
       {
         label: "過去最高",
@@ -341,16 +355,18 @@
     const rows = semiannualDashboard.prevalence || [];
     if (!rows.length) return;
     const pastAverage = averageRate(rows.slice(0, -1));
-    const width = 760;
-    const height = 320;
-    const margin = { top: 24, right: 28, bottom: 58, left: 58 };
+    const width = 900;
+    const height = 390;
+    const margin = { top: 58, right: 162, bottom: 86, left: 76 };
     const chartWidth = width - margin.left - margin.right;
     const chartHeight = height - margin.top - margin.bottom;
-    const maxRate = Math.max(0.25, ...rows.map((row) => Number(row.currentLikelyNotRateAmongChecked || 0))) * 1.05;
+    const observedMax = Math.max(...rows.map((row) => Number(row.currentLikelyNotRateAmongChecked || 0)));
+    const maxRate = Math.max(0.25, Math.ceil(observedMax * 20) / 20);
     const x = (index) => margin.left + (rows.length === 1 ? chartWidth / 2 : (chartWidth * index) / (rows.length - 1));
     const y = (rate) => margin.top + chartHeight - (Number(rate || 0) / maxRate) * chartHeight;
     const points = rows.map((row, index) => `${x(index).toFixed(1)},${y(row.currentLikelyNotRateAmongChecked).toFixed(1)}`).join(" ");
-    const ticks = [0, 0.05, 0.1, 0.15, 0.2];
+    const tickCount = Math.round(maxRate / 0.05);
+    const ticks = Array.from({ length: tickCount + 1 }, (_, index) => index * 0.05);
     const grid = ticks
       .map((tick) => {
         const ty = y(tick);
@@ -363,17 +379,25 @@
     const averageLine =
       pastAverage === null
         ? ""
-        : `<line class="dashboard-chart-average" x1="${margin.left}" y1="${y(pastAverage).toFixed(1)}" x2="${width - margin.right}" y2="${y(pastAverage).toFixed(1)}"></line>`;
+        : `
+          <line class="dashboard-chart-average" x1="${margin.left}" y1="${y(pastAverage).toFixed(1)}" x2="${width - margin.right}" y2="${y(pastAverage).toFixed(1)}"></line>
+          <text class="dashboard-average-label" x="${width - margin.right + 20}" y="${(y(pastAverage) - 6).toFixed(1)}">2023〜2025年平均</text>
+          <text class="dashboard-average-label dashboard-average-value" x="${width - margin.right + 20}" y="${(y(pastAverage) + 10).toFixed(1)}">${escapeHtml(formatPercent(pastAverage))}</text>
+        `;
     const markers = rows
       .map((row, index) => {
         const cx = x(index);
         const cy = y(row.currentLikelyNotRateAmongChecked);
         const isLatest = index === rows.length - 1;
+        const parts = formatPeriodTickParts(row.period);
         return `
           <g class="${isLatest ? "dashboard-point-current" : "dashboard-point"}">
             <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${isLatest ? 6 : 4}"></circle>
             <text x="${cx.toFixed(1)}" y="${(cy - 12).toFixed(1)}" text-anchor="middle">${escapeHtml(formatPercent(row.currentLikelyNotRateAmongChecked))}</text>
-            <text class="dashboard-chart-x" x="${cx.toFixed(1)}" y="${height - 24}" text-anchor="middle">${escapeHtml(formatPeriodShort(row.period))}</text>
+            <text class="dashboard-chart-x" x="${cx.toFixed(1)}" y="${height - 54}" text-anchor="middle">
+              <tspan x="${cx.toFixed(1)}">${escapeHtml(parts.year)}</tspan>
+              <tspan x="${cx.toFixed(1)}" dy="15">${escapeHtml(parts.half)}</tspan>
+            </text>
           </g>
         `;
       })
@@ -381,17 +405,15 @@
     elements.prevalenceChart.innerHTML = `
       <svg class="dashboard-line-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="半期別の収益化停止・未収益化率">
         <title>半期別の収益化停止・未収益化率</title>
+        <text class="dashboard-chart-axis-title" x="${margin.left}" y="22">収益化停止・未収益化率（%）</text>
         ${grid}
         ${averageLine}
         <line class="dashboard-chart-axis" x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}"></line>
         <line class="dashboard-chart-axis" x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${height - margin.bottom}"></line>
         <polyline class="dashboard-line-series" points="${points}"></polyline>
         ${markers}
+        <text class="dashboard-chart-axis-title" x="${(margin.left + chartWidth / 2).toFixed(1)}" y="${height - 10}" text-anchor="middle">投稿があった時期（半期）</text>
       </svg>
-      <div class="dashboard-chart-legend">
-        <span><i class="legend-line-current"></i>半期別の率</span>
-        <span><i class="legend-line-average"></i>2023-2025平均</span>
-      </div>
     `;
   }
 

@@ -7,7 +7,7 @@
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' https://yt3.ggpht.com https://yt3.googleusercontent.com data:; font-src 'self' data:; connect-src https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'; upgrade-insecure-requests">
     <title>YouTube収益化停止 可能性リスト</title>
-    <link rel="stylesheet" href="assets/styles.css?v=20260427-dashboard10">
+    <link rel="stylesheet" href="assets/styles.css?v=20260427-dashboard11">
   </head>
   <body>
     <header class="site-header">
@@ -58,19 +58,19 @@
       <section class="period-dashboard" id="periodDashboard" aria-label="期間別ダッシュボード">
         <div class="dashboard-head">
           <div>
-            <p class="section-label">増加検証</p>
-            <h2>過去より収益化停止・未収益化は増えたのか？</h2>
+            <p class="section-label">半期別比較</p>
+            <h2>収益化停止・未収益化率の推移</h2>
             <p class="dashboard-lead">
-              2023年以降、各半期に投稿があったチャンネルを同じ基準で比較しています。
+              各半期に投稿があったチャンネルのうち、現在の判定が収益化停止・未収益化となっている割合です。
             </p>
           </div>
         </div>
-        <div class="dashboard-verdict" id="dashboardVerdict"></div>
         <div class="dashboard-kpis" id="dashboardKpis"></div>
+        <div class="dashboard-verdict" id="dashboardVerdict"></div>
         <article class="dashboard-panel dashboard-panel-wide">
           <div class="panel-head">
-            <h3>半期別の推移</h3>
-            <p>線が上がるほど、収益化停止・未収益化の割合が高い</p>
+            <h3>半期別推移</h3>
+            <p>単位: % / 横軸: 投稿があった時期</p>
           </div>
           <div class="rate-chart" id="prevalenceChart"></div>
         </article>
@@ -171,8 +171,8 @@
       </section>
     </main>
 
-    <script src="assets/data.js?v=20260427-dashboard10"></script>
-    <script src="assets/app.js?v=20260427-dashboard10"></script>
+    <script src="assets/data.js?v=20260427-dashboard11"></script>
+    <script src="assets/app.js?v=20260427-dashboard11"></script>
     <!-- Cloudflare Web Analytics -->
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "ef2305f18ca64c5dab2f9a0f2eccdabe"}'></script>
     <!-- End Cloudflare Web Analytics -->
