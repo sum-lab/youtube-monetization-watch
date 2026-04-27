@@ -287,12 +287,12 @@
     const latestEvent = dashboardIncidenceRows(thresholdDays).find((row) => row.period === latest.period) || {};
     elements.dashboardVerdict.innerHTML = `
       <div class="verdict-main">
-        <span>今の結論</span>
-        <strong>保留</strong>
+        <span>結論</span>
+        <strong>まだ判断できません</strong>
       </div>
       <p>
-        ${escapeHtml(formatPeriod(latest.period))}は、広告が確認できなかった割合が${escapeHtml(formatPercent(latest.currentLikelyNotRateAmongChecked))}でした。
-        ただし、${escapeHtml(thresholdDays)}日以上投稿が止まった候補のうち${escapeHtml(formatNumber(latestEvent.missingAdResultInactiveCandidates))}件が未確認です。
+        ${escapeHtml(formatPeriod(latest.period))}は、広告なしに見える割合が${escapeHtml(formatPercent(latest.currentLikelyNotRateAmongChecked))}でした。
+        ただし、${escapeHtml(thresholdDays)}日以上投稿が止まった候補のうち${escapeHtml(formatNumber(latestEvent.missingAdResultInactiveCandidates))}件は、広告確認がまだ終わっていません。
       </p>
     `;
   }
@@ -313,21 +313,21 @@
     const selectedLatest = dashboardIncidenceRows(thresholdDays).find((row) => row.period === latestPeriod) || {};
     const cards = [
       {
-        label: "広告が確認できなかった割合",
+        label: "広告なしに見える割合",
         value: formatPercent(semiannualDashboard.kpis?.latestLikelyNotRate),
         detail: `${formatPeriod(latestPeriod)}。${formatPeriod(previousPeriod)}より${formatSignedPoints(semiannualDashboard.kpis?.latestLikelyNotDeltaPoints)}`,
         tone: "blue",
       },
       {
-        label: "投稿停止かつ広告なし",
+        label: "投稿停止後も広告なし",
         value: formatNumber(selectedLatest.likelyNotInactiveEvents),
-        detail: `${thresholdDays}日以上投稿が止まり、広告も確認できない`,
+        detail: `${thresholdDays}日以上投稿が止まり、広告なしに見える`,
         tone: "red",
       },
       {
-        label: "未確認の投稿停止候補",
+        label: "広告確認が未完了",
         value: formatNumber(selectedLatest.missingAdResultInactiveCandidates),
-        detail: "ここを確認しないと増加判断できない",
+        detail: "投稿停止候補の確認がまだ残っている",
         tone: "gray",
       },
     ];
@@ -421,8 +421,9 @@
     if (!elements.dashboardNote || !semiannualDashboard) return;
     elements.dashboardNote.textContent = [
       `作成基準日: ${semiannualDashboard.asOf || "-"}`,
-      "広告が確認できなかった割合は、YouTube公式の収益化状態ではなく、公開動画で広告表示を確認できなかった割合です。",
-      "投稿停止だけでは収益化停止とは判断できません。",
+      "広告なしに見えるとは、公開動画で広告表示を確認できなかったという意味です。",
+      "YouTube内部の収益化OFFを確認したものではありません。",
+      "未確認とは、投稿停止候補の広告表示チェックがまだ終わっていないという意味です。",
     ].join(" / ");
   }
 

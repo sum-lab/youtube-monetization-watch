@@ -281,6 +281,7 @@ main {
 .dashboard-lead,
 .panel-head p,
 .dashboard-note,
+.dashboard-glossary p,
 .dashboard-kpi em,
 .chart-label small {
   color: #626264;
@@ -305,7 +306,7 @@ main {
 
 .dashboard-verdict {
   display: grid;
-  grid-template-columns: 170px minmax(0, 1fr);
+  grid-template-columns: 220px minmax(0, 1fr);
   gap: 16px;
   align-items: center;
   margin-bottom: 14px;
@@ -326,9 +327,9 @@ main {
 .verdict-main strong {
   display: block;
   color: #b0181b;
-  font-size: 2.35rem;
+  font-size: 1.65rem;
   font-weight: 900;
-  line-height: 1.1;
+  line-height: 1.22;
 }
 
 .dashboard-verdict p {
@@ -337,6 +338,30 @@ main {
   font-size: 1rem;
   font-weight: 700;
   line-height: 1.65;
+}
+
+.dashboard-glossary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.dashboard-glossary p {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.dashboard-glossary strong {
+  display: block;
+  margin-bottom: 2px;
+  color: #000;
+  font-size: 0.9rem;
 }
 
 .dashboard-kpi,
@@ -730,7 +755,7 @@ tbody tr:hover {
   }
 
   .dashboard-verdict {
-    grid-template-columns: 130px minmax(0, 1fr);
+    grid-template-columns: 180px minmax(0, 1fr);
   }
 
   .dashboard-kpis {
@@ -769,6 +794,7 @@ tbody tr:hover {
   .dashboard-head,
   .dashboard-layout,
   .dashboard-verdict,
+  .dashboard-glossary,
   .dashboard-kpis {
     grid-template-columns: 1fr;
   }
