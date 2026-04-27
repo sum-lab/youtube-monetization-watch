@@ -298,51 +298,45 @@ main {
 
 .dashboard-kpis {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 14px;
 }
 
 .dashboard-verdict {
   display: grid;
-  grid-template-columns: 0.86fr 1fr 1fr;
-  gap: 12px;
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
   margin-bottom: 14px;
-}
-
-.dashboard-verdict article {
-  min-height: 128px;
   border: 1px solid #d8d8df;
-  border-radius: 8px;
-  background: #fff;
-  padding: 14px;
-}
-
-.dashboard-verdict article:first-child {
   border-top: 4px solid #fe3939;
+  border-radius: 8px;
   background: #fff7f7;
+  padding: 16px;
 }
 
-.dashboard-verdict span {
+.verdict-main span {
   display: block;
-  color: #626264;
-  font-size: 0.78rem;
+  color: #7d1012;
+  font-size: 0.8rem;
   font-weight: 900;
 }
 
-.dashboard-verdict strong {
+.verdict-main strong {
   display: block;
-  margin-top: 4px;
-  color: #000;
-  font-size: 1.38rem;
+  color: #b0181b;
+  font-size: 2.35rem;
   font-weight: 900;
+  line-height: 1.1;
 }
 
 .dashboard-verdict p {
-  margin: 8px 0 0;
+  margin: 0;
   color: #25211d;
-  font-size: 0.88rem;
-  line-height: 1.55;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.65;
 }
 
 .dashboard-kpi,
@@ -482,6 +476,20 @@ main {
 
 .chart-row strong {
   text-align: right;
+}
+
+.dashboard-details {
+  margin-top: 14px;
+}
+
+.dashboard-details summary {
+  width: fit-content;
+  cursor: pointer;
+  color: #000;
+  font-size: 0.86rem;
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .dashboard-table-wrap {
@@ -722,11 +730,11 @@ tbody tr:hover {
   }
 
   .dashboard-verdict {
-    grid-template-columns: 1fr;
+    grid-template-columns: 130px minmax(0, 1fr);
   }
 
   .dashboard-kpis {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -762,6 +770,10 @@ tbody tr:hover {
   .dashboard-layout,
   .dashboard-verdict,
   .dashboard-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-verdict {
     grid-template-columns: 1fr;
   }
 
