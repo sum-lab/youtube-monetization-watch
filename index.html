@@ -7,7 +7,7 @@
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' https://yt3.ggpht.com https://yt3.googleusercontent.com data:; font-src 'self' data:; connect-src https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'; upgrade-insecure-requests">
     <title>YouTube収益化停止 可能性リスト</title>
-    <link rel="stylesheet" href="assets/styles.css?v=20260427-dashboard1">
+    <link rel="stylesheet" href="assets/styles.css?v=20260427-dashboard2">
   </head>
   <body>
     <header class="site-header">
@@ -20,7 +20,7 @@
         <h1><span>YouTube</span>収益化停止<br>可能性リスト</h1>
         <p class="lead">
           収益化停止・未収益化の可能性があるチャンネルを探しやすくするため、
-          公開動画ページ上の広告表示シグナルを機械的に集計したデータベースです。
+          公開動画ページで広告表示を確認できるかどうかを機械的に集計したデータベースです。
         </p>
         <p class="header-actions">
           <a id="globalFeedbackLink" class="report-link report-link-primary" href="https://github.com/sum-lab/youtube-monetization-watch/issues/new" target="_blank" rel="noopener noreferrer">修正・情報提供</a>
@@ -37,7 +37,7 @@
       <section class="notice" aria-label="注意事項">
         <strong>断定ではありません。</strong>
         本ページはYouTube公式・各チャンネル運営者による収益化ステータスの確認結果ではありません。
-        「収益化停止/未収益化の可能性が高い」は、外部から観測できる広告表示シグナルが弱かったチャンネルを指します。
+        「収益化停止/未収益化の可能性が高い」は、外部から広告表示を確認できなかった、または確認しにくかったチャンネルを指します。
         誤判定を含む可能性があるため、個別チャンネルへの攻撃や断定的な拡散は避けてください。
       </section>
 
@@ -58,14 +58,15 @@
       <section class="period-dashboard" id="periodDashboard" aria-label="期間別ダッシュボード">
         <div class="dashboard-head">
           <div>
-            <p class="section-label">Semiannual Dashboard</p>
+            <p class="section-label">半年ごとの推移</p>
             <h2>2026年以降に増えているか</h2>
             <p class="dashboard-lead">
-              半期ごとの広告シグナル率と、投稿停止を組み合わせた収益停止疑い発生率 proxy を並べています。
+              2023年以降を半年ごとに区切り、広告が確認できなかった割合と、投稿が止まったチャンネルの候補数を比べています。
+              ここでいう広告なしは、YouTube公式の収益化状態ではなく、公開動画で広告表示を確認できなかったという意味です。
             </p>
           </div>
           <label class="dashboard-control">
-            <span>投稿停止</span>
+            <span>投稿が止まっている期間</span>
             <select id="dashboardThresholdSelect" aria-label="投稿停止日数"></select>
           </label>
         </div>
@@ -73,15 +74,15 @@
         <div class="dashboard-layout">
           <article class="dashboard-panel">
             <div class="panel-head">
-              <h3>半期別 no-ad シグナル率</h3>
-              <p>各半期に活動が観測され、広告判定済みのチャンネル内比率</p>
+              <h3>半年ごとの広告なし割合</h3>
+              <p>活動と広告の有無を確認できたチャンネル内の割合</p>
             </div>
             <div class="rate-chart" id="prevalenceChart"></div>
           </article>
           <article class="dashboard-panel">
             <div class="panel-head">
-              <h3>投稿停止 proxy の幅</h3>
-              <p>既知の下限と、未判定候補を含めた上限</p>
+              <h3>投稿が止まったチャンネルの推定幅</h3>
+              <p>確認済みだけの値と、未確認候補も含めた最大値</p>
             </div>
             <div class="range-chart" id="incidenceChart"></div>
           </article>
@@ -90,14 +91,14 @@
           <table class="dashboard-table">
             <thead>
               <tr>
-                <th>期間</th>
-                <th>活動ch</th>
-                <th>no-ad率</th>
-                <th>前期差</th>
-                <th>停止疑い下限</th>
+                <th>時期</th>
+                <th>活動チャンネル</th>
+                <th>広告なし割合</th>
+                <th>前の半期との差</th>
+                <th>確認済み</th>
                 <th>未判定候補</th>
-                <th>上限</th>
-                <th>期間確定</th>
+                <th>最大値</th>
+                <th>状態</th>
               </tr>
             </thead>
             <tbody id="dashboardRows"></tbody>
@@ -174,7 +175,7 @@
           <h2>このリストの見方</h2>
         </div>
         <p>
-          「収益化停止/未収益化の可能性が高い」は、直近動画で広告表示に関する外部シグナルがほぼ見られなかった状態です。
+          「収益化停止/未収益化の可能性が高い」は、直近動画で広告表示をほぼ確認できなかった状態です。
           YouTube Studio内部の収益化ステータス、広告制限、権利者による収益化、地域・視聴者ごとの差は確認できません。
         </p>
         <p>
@@ -184,8 +185,8 @@
       </section>
     </main>
 
-    <script src="assets/data.js?v=20260427-dashboard1"></script>
-    <script src="assets/app.js?v=20260427-dashboard1"></script>
+    <script src="assets/data.js?v=20260427-dashboard2"></script>
+    <script src="assets/app.js?v=20260427-dashboard2"></script>
     <!-- Cloudflare Web Analytics -->
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "ef2305f18ca64c5dab2f9a0f2eccdabe"}'></script>
     <!-- End Cloudflare Web Analytics -->

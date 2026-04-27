@@ -127,7 +127,7 @@
     if (value === null || value === undefined || value === "") return "-";
     const points = Number(value) * 100;
     const sign = points > 0 ? "+" : "";
-    return `${sign}${points.toFixed(1)}pt`;
+    return `${sign}${points.toFixed(1)}ポイント`;
   }
 
   function formatRelative(value) {
@@ -135,6 +135,12 @@
     const pct = Number(value) * 100;
     const sign = pct > 0 ? "+" : "";
     return `${sign}${pct.toFixed(1)}%`;
+  }
+
+  function formatPeriod(value) {
+    const match = String(value || "").match(/^(\d{4})H([12])$/);
+    if (!match) return String(value || "-");
+    return `${match[1]}年${match[2] === "1" ? "上半期" : "下半期"}`;
   }
 
   function escapeHtml(value) {
@@ -273,27 +279,27 @@
     const selectedLatest = dashboardIncidenceRows(thresholdDays).find((row) => row.period === latestPeriod) || {};
     const cards = [
       {
-        label: `${latestPeriod} no-ad率`,
+        label: `${formatPeriod(latestPeriod)} 広告なし割合`,
         value: formatPercent(semiannualDashboard.kpis?.latestLikelyNotRate),
-        detail: `${previousPeriod}比 ${formatSignedPoints(semiannualDashboard.kpis?.latestLikelyNotDeltaPoints)} / ${formatRelative(semiannualDashboard.kpis?.latestLikelyNotRelativeChange)}`,
+        detail: `${formatPeriod(previousPeriod)}より ${formatSignedPoints(semiannualDashboard.kpis?.latestLikelyNotDeltaPoints)} / ${formatRelative(semiannualDashboard.kpis?.latestLikelyNotRelativeChange)}増`,
         tone: "blue",
       },
       {
-        label: `${thresholdDays}日停止 下限`,
+        label: `${thresholdDays}日以上 投稿停止の確認済み`,
         value: formatPercent(selectedLatest.lowerBoundRate),
-        detail: "広告シグナル判定済みの停止疑い",
+        detail: "広告なし確認済みだけで計算",
         tone: "red",
       },
       {
-        label: "未判定候補",
+        label: "まだ確認できていない候補",
         value: formatNumber(selectedLatest.missingAdResultInactiveCandidates),
-        detail: "広告シグナル確認が必要",
+        detail: "広告の有無をこれから確認",
         tone: "gray",
       },
       {
-        label: "未判定含む上限",
+        label: "候補をすべて含めた最大値",
         value: formatPercent(selectedLatest.upperBoundRate),
-        detail: selectedLatest.eventWindowComplete ? "期間確定" : "期間途中の速報値",
+        detail: selectedLatest.eventWindowComplete ? "確認可能な期間" : "期間途中の暫定値",
         tone: "black",
       },
     ];
@@ -321,8 +327,8 @@
         return `
           <div class="chart-row">
             <div class="chart-label">
-              <span>${escapeHtml(row.period)}</span>
-              <small>判定済み ${escapeHtml(coverage)}</small>
+              <span>${escapeHtml(formatPeriod(row.period))}</span>
+              <small>確認済み ${escapeHtml(coverage)}</small>
             </div>
             <div class="chart-track" aria-hidden="true">
               <div class="chart-fill chart-fill-blue" style="width:${width.toFixed(2)}%"></div>
@@ -347,14 +353,14 @@
         return `
           <div class="chart-row">
             <div class="chart-label">
-              <span>${escapeHtml(row.period)}</span>
-              <small>${row.eventWindowComplete ? "確定" : "速報"}</small>
+              <span>${escapeHtml(formatPeriod(row.period))}</span>
+              <small>${row.eventWindowComplete ? "確認可能" : "期間途中"}</small>
             </div>
             <div class="chart-track chart-track-range" aria-hidden="true">
               <div class="chart-fill chart-fill-red" style="width:${lowerWidth.toFixed(2)}%"></div>
               <div class="chart-fill chart-fill-gray" style="width:${unknownWidth.toFixed(2)}%"></div>
             </div>
-            <strong>${escapeHtml(formatPercent(lower))} / ${escapeHtml(formatPercent(upper))}</strong>
+            <strong>${escapeHtml(formatPercent(lower))} / 最大 ${escapeHtml(formatPercent(upper))}</strong>
           </div>
         `;
       })
@@ -370,14 +376,14 @@
         const event = incidence[row.period] || {};
         return `
           <tr>
-            <td>${escapeHtml(row.period)}</td>
+            <td>${escapeHtml(formatPeriod(row.period))}</td>
             <td>${formatNumber(row.activeChannelsObserved)}</td>
             <td>${escapeHtml(formatPercent(row.currentLikelyNotRateAmongChecked))}</td>
             <td>${escapeHtml(formatSignedPoints(row.previousRateDeltaPoints))}</td>
             <td>${escapeHtml(formatPercent(event.lowerBoundRate))}</td>
             <td>${formatNumber(event.missingAdResultInactiveCandidates)}</td>
             <td>${escapeHtml(formatPercent(event.upperBoundRate))}</td>
-            <td>${event.eventWindowComplete ? "確定" : "速報"}</td>
+            <td>${event.eventWindowComplete ? "確認可能" : "期間途中"}</td>
           </tr>
         `;
       })
@@ -388,8 +394,8 @@
     if (!elements.dashboardNote || !semiannualDashboard) return;
     elements.dashboardNote.textContent = [
       `作成基準日: ${semiannualDashboard.asOf || "-"}`,
-      "no-ad率は収益停止の公式値ではなく、公開動画ページ上の広告表示シグナルの比率です。",
-      "上限は未判定候補をすべて停止疑いとみなした場合の最大幅です。",
+      "広告なし割合はYouTube公式の収益化状態ではなく、公開動画で広告表示を確認できなかった割合です。",
+      "最大値は未確認候補をすべて広告なしだったと仮定した場合です。",
     ].join(" / ");
   }
 
