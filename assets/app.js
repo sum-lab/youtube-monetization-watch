@@ -27,6 +27,7 @@
     sourceMetaDate: document.getElementById("sourceMetaDate"),
     periodDashboard: document.getElementById("periodDashboard"),
     dashboardThresholdSelect: document.getElementById("dashboardThresholdSelect"),
+    dashboardVerdict: document.getElementById("dashboardVerdict"),
     dashboardKpis: document.getElementById("dashboardKpis"),
     prevalenceChart: document.getElementById("prevalenceChart"),
     incidenceChart: document.getElementById("incidenceChart"),
@@ -263,6 +264,58 @@
     return Number(elements.dashboardThresholdSelect?.value || semiannualDashboard?.mainThresholdDays || 30);
   }
 
+  function latestPrevalenceRow() {
+    const rows = semiannualDashboard?.prevalence || [];
+    return rows[rows.length - 1] || {};
+  }
+
+  function previousPrevalenceRows() {
+    const rows = semiannualDashboard?.prevalence || [];
+    return rows.slice(0, Math.max(0, rows.length - 1));
+  }
+
+  function bestPreviousCoverageRate() {
+    const rows = previousPrevalenceRows();
+    if (!rows.length) return null;
+    return Math.max(...rows.map((row) => Number(row.checkedCoverageRate || 0)));
+  }
+
+  function renderDashboardVerdict() {
+    if (!elements.dashboardVerdict || !semiannualDashboard) return;
+    const latest = latestPrevalenceRow();
+    const bestCoverage = bestPreviousCoverageRate();
+    const thresholdDays = selectedDashboardThreshold();
+    const latestEvent = dashboardIncidenceRows(thresholdDays).find((row) => row.period === latest.period) || {};
+    const items = [
+      {
+        label: "今の結論",
+        value: "まだ断定不可",
+        text: "2026年上半期は期間途中で、過去期間ほど広告の有無を未確認のチャンネルが多く残っています。",
+      },
+      {
+        label: "今言えること",
+        value: "活動中・確認済みの範囲",
+        text: `${formatPeriod(latest.period)}に投稿があり、広告の有無を確認できたチャンネルでは広告なし割合が${formatPercent(latest.currentLikelyNotRateAmongChecked)}です。`,
+      },
+      {
+        label: "不足している確認",
+        value: `${formatNumber(latestEvent.missingAdResultInactiveCandidates)}件`,
+        text: `${thresholdDays}日以上投稿が止まっている候補のうち、広告の有無をまだ確認していない件数です。過去期間の確認済み割合は最大でも${formatPercent(bestCoverage, 0)}です。`,
+      },
+    ];
+    elements.dashboardVerdict.innerHTML = items
+      .map(
+        (item) => `
+          <article>
+            <span>${escapeHtml(item.label)}</span>
+            <strong>${escapeHtml(item.value)}</strong>
+            <p>${escapeHtml(item.text)}</p>
+          </article>
+        `
+      )
+      .join("");
+  }
+
   function renderDashboardControls() {
     if (!elements.dashboardThresholdSelect || !semiannualDashboard) return;
     elements.dashboardThresholdSelect.innerHTML = (semiannualDashboard.thresholds || [30])
@@ -279,15 +332,15 @@
     const selectedLatest = dashboardIncidenceRows(thresholdDays).find((row) => row.period === latestPeriod) || {};
     const cards = [
       {
-        label: `${formatPeriod(latestPeriod)} 広告なし割合`,
+        label: `${formatPeriod(latestPeriod)} 活動中・確認済みの広告なし割合`,
         value: formatPercent(semiannualDashboard.kpis?.latestLikelyNotRate),
         detail: `${formatPeriod(previousPeriod)}より ${formatSignedPoints(semiannualDashboard.kpis?.latestLikelyNotDeltaPoints)} / ${formatRelative(semiannualDashboard.kpis?.latestLikelyNotRelativeChange)}増`,
         tone: "blue",
       },
       {
-        label: `${thresholdDays}日以上 投稿停止の確認済み`,
+        label: `${thresholdDays}日以上 投稿停止かつ広告なし確認済み`,
         value: formatPercent(selectedLatest.lowerBoundRate),
-        detail: "広告なし確認済みだけで計算",
+        detail: "現時点で確認済みの最小値",
         tone: "red",
       },
       {
@@ -297,9 +350,9 @@
         tone: "gray",
       },
       {
-        label: "候補をすべて含めた最大値",
+        label: "候補をすべて広告なしと仮定した場合",
         value: formatPercent(selectedLatest.upperBoundRate),
-        detail: selectedLatest.eventWindowComplete ? "確認可能な期間" : "期間途中の暫定値",
+        detail: selectedLatest.eventWindowComplete ? "最大側の試算" : "期間途中の最大側試算",
         tone: "black",
       },
     ];
@@ -360,7 +413,7 @@
               <div class="chart-fill chart-fill-red" style="width:${lowerWidth.toFixed(2)}%"></div>
               <div class="chart-fill chart-fill-gray" style="width:${unknownWidth.toFixed(2)}%"></div>
             </div>
-            <strong>${escapeHtml(formatPercent(lower))} / 最大 ${escapeHtml(formatPercent(upper))}</strong>
+            <strong>${escapeHtml(formatPercent(lower))} / 全候補 ${escapeHtml(formatPercent(upper))}</strong>
           </div>
         `;
       })
@@ -395,7 +448,8 @@
     elements.dashboardNote.textContent = [
       `作成基準日: ${semiannualDashboard.asOf || "-"}`,
       "広告なし割合はYouTube公式の収益化状態ではなく、公開動画で広告表示を確認できなかった割合です。",
-      "最大値は未確認候補をすべて広告なしだったと仮定した場合です。",
+      "全候補を含めた場合の値は、未確認候補をすべて広告なしだったと仮定した最大側の試算です。",
+      "この画面だけで2026年以降に収益化停止が増えたとは断定できません。",
     ].join(" / ");
   }
 
@@ -406,6 +460,7 @@
       return;
     }
     renderDashboardKpis();
+    renderDashboardVerdict();
     renderPrevalenceChart();
     renderIncidenceChart();
     renderDashboardTable();

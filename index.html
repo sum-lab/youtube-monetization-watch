@@ -7,7 +7,7 @@
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' https://yt3.ggpht.com https://yt3.googleusercontent.com data:; font-src 'self' data:; connect-src https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'; upgrade-insecure-requests">
     <title>YouTube収益化停止 可能性リスト</title>
-    <link rel="stylesheet" href="assets/styles.css?v=20260427-dashboard2">
+    <link rel="stylesheet" href="assets/styles.css?v=20260427-dashboard3">
   </head>
   <body>
     <header class="site-header">
@@ -59,10 +59,10 @@
         <div class="dashboard-head">
           <div>
             <p class="section-label">半年ごとの推移</p>
-            <h2>2026年以降に増えているか</h2>
+            <h2>増加検証の現在地</h2>
             <p class="dashboard-lead">
-              2023年以降を半年ごとに区切り、広告が確認できなかった割合と、投稿が止まったチャンネルの候補数を比べています。
-              ここでいう広告なしは、YouTube公式の収益化状態ではなく、公開動画で広告表示を確認できなかったという意味です。
+              2026年以降に収益化停止が増えたかを検証するための途中集計です。
+              現時点では結論ではなく、広告が確認できなかった割合、投稿停止候補、未確認データの量を分けて表示しています。
             </p>
           </div>
           <label class="dashboard-control">
@@ -70,19 +70,20 @@
             <select id="dashboardThresholdSelect" aria-label="投稿停止日数"></select>
           </label>
         </div>
+        <div class="dashboard-verdict" id="dashboardVerdict"></div>
         <div class="dashboard-kpis" id="dashboardKpis"></div>
         <div class="dashboard-layout">
           <article class="dashboard-panel">
             <div class="panel-head">
-              <h3>半年ごとの広告なし割合</h3>
-              <p>活動と広告の有無を確認できたチャンネル内の割合</p>
+              <h3>活動中チャンネルの広告なし割合</h3>
+              <p>その半年に投稿があり、広告の有無を確認できたチャンネル内の割合</p>
             </div>
             <div class="rate-chart" id="prevalenceChart"></div>
           </article>
           <article class="dashboard-panel">
             <div class="panel-head">
-              <h3>投稿が止まったチャンネルの推定幅</h3>
-              <p>確認済みだけの値と、未確認候補も含めた最大値</p>
+              <h3>投稿が止まった候補の確認状況</h3>
+              <p>広告なし確認済みと、まだ広告の有無を確認していない候補</p>
             </div>
             <div class="range-chart" id="incidenceChart"></div>
           </article>
@@ -95,9 +96,9 @@
                 <th>活動チャンネル</th>
                 <th>広告なし割合</th>
                 <th>前の半期との差</th>
-                <th>確認済み</th>
+                <th>広告なし確認済み</th>
                 <th>未判定候補</th>
-                <th>最大値</th>
+                <th>全候補を含めた場合</th>
                 <th>状態</th>
               </tr>
             </thead>
@@ -185,8 +186,8 @@
       </section>
     </main>
 
-    <script src="assets/data.js?v=20260427-dashboard2"></script>
-    <script src="assets/app.js?v=20260427-dashboard2"></script>
+    <script src="assets/data.js?v=20260427-dashboard3"></script>
+    <script src="assets/app.js?v=20260427-dashboard3"></script>
     <!-- Cloudflare Web Analytics -->
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "ef2305f18ca64c5dab2f9a0f2eccdabe"}'></script>
     <!-- End Cloudflare Web Analytics -->
