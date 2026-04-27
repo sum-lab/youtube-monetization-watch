@@ -260,6 +260,214 @@ main {
   color: var(--red-dark);
 }
 
+.period-dashboard {
+  margin: 24px 0;
+  padding: 22px;
+  border: 1px solid #d8d8df;
+  border-top: 5px solid #3460fb;
+  border-radius: 8px;
+  background: #f8f8fb;
+  color: #000;
+}
+
+.dashboard-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 200px);
+  gap: 18px;
+  align-items: end;
+  margin-bottom: 18px;
+}
+
+.dashboard-lead,
+.panel-head p,
+.dashboard-note,
+.dashboard-kpi em,
+.chart-label small {
+  color: #626264;
+}
+
+.dashboard-lead {
+  max-width: 820px;
+  margin: 8px 0 0;
+  font-size: 0.94rem;
+}
+
+.dashboard-control {
+  color: #000;
+}
+
+.dashboard-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.dashboard-kpi,
+.dashboard-panel {
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.dashboard-kpi {
+  min-height: 132px;
+  padding: 14px;
+}
+
+.dashboard-kpi span,
+.dashboard-kpi em {
+  display: block;
+  font-style: normal;
+}
+
+.dashboard-kpi span {
+  min-height: 2.8em;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.dashboard-kpi strong {
+  display: block;
+  margin: 4px 0 6px;
+  font-family: Arial, "Yu Gothic", sans-serif;
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.dashboard-kpi-blue {
+  border-top: 4px solid #3460fb;
+}
+
+.dashboard-kpi-blue strong {
+  color: #2547bd;
+}
+
+.dashboard-kpi-red {
+  border-top: 4px solid #fe3939;
+}
+
+.dashboard-kpi-red strong {
+  color: #b0181b;
+}
+
+.dashboard-kpi-gray {
+  border-top: 4px solid #767676;
+}
+
+.dashboard-kpi-black {
+  border-top: 4px solid #4d4d4d;
+}
+
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.dashboard-panel {
+  padding: 16px;
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: baseline;
+  margin-bottom: 14px;
+}
+
+.panel-head h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.panel-head p {
+  margin: 0;
+  font-size: 0.78rem;
+  text-align: right;
+}
+
+.chart-row {
+  display: grid;
+  grid-template-columns: 86px minmax(140px, 1fr) 84px;
+  gap: 10px;
+  align-items: center;
+  min-height: 38px;
+  margin-top: 8px;
+}
+
+.chart-label span,
+.chart-row strong {
+  display: block;
+  font-family: Arial, "Yu Gothic", sans-serif;
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.chart-label small {
+  display: block;
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+
+.chart-track {
+  display: flex;
+  width: 100%;
+  height: 16px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e6e6e6;
+}
+
+.chart-fill {
+  min-width: 1px;
+  height: 100%;
+}
+
+.chart-fill-blue {
+  background: #3460fb;
+}
+
+.chart-fill-red {
+  background: #fe3939;
+}
+
+.chart-fill-gray {
+  background: #999;
+}
+
+.chart-row strong {
+  text-align: right;
+}
+
+.dashboard-table-wrap {
+  margin-top: 14px;
+  overflow-x: auto;
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.dashboard-table {
+  min-width: 860px;
+}
+
+.dashboard-table th {
+  background: #4d4d4d;
+  color: #fff;
+}
+
+.dashboard-table tbody tr:nth-child(even) {
+  background: #f8f8fb;
+}
+
+.dashboard-note {
+  margin: 12px 0 0;
+  font-size: 0.8rem;
+}
+
 .toolbar {
   display: grid;
   grid-template-columns: minmax(260px, 1fr) repeat(3, minmax(150px, 190px));
@@ -465,8 +673,14 @@ tbody tr:hover {
   .summary-grid,
   .toolbar,
   .source-meta,
-  .feedback-panel {
+  .feedback-panel,
+  .dashboard-head,
+  .dashboard-layout {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .dashboard-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -482,6 +696,10 @@ tbody tr:hover {
     display: block;
   }
 
+  .header-top span {
+    display: block;
+  }
+
   .header-inner {
     padding: 30px 0;
   }
@@ -493,8 +711,33 @@ tbody tr:hover {
   .summary-grid,
   .toolbar,
   .source-meta,
-  .feedback-panel {
+  .feedback-panel,
+  .dashboard-head,
+  .dashboard-layout,
+  .dashboard-kpis {
     grid-template-columns: 1fr;
+  }
+
+  .period-dashboard {
+    padding: 14px;
+  }
+
+  .panel-head {
+    display: block;
+  }
+
+  .panel-head p {
+    margin-top: 4px;
+    text-align: left;
+  }
+
+  .chart-row {
+    grid-template-columns: 74px minmax(120px, 1fr);
+  }
+
+  .chart-row strong {
+    grid-column: 1 / -1;
+    text-align: left;
   }
 
   .source-meta div {

@@ -1,7 +1,8 @@
-﻿(function () {
+(function () {
   const data = window.MONETIZATION_REPORT_DATA || { summary: {}, channels: [] };
   const channels = data.channels || [];
   const labels = (data.summary && data.summary.labels) || {};
+  const semiannualDashboard = data.semiannualDashboard || null;
   const issueBaseUrl = "https://github.com/sum-lab/youtube-monetization-watch/issues/new";
 
   const resultWeight = {
@@ -24,6 +25,13 @@
     feedbackPanelLink: document.getElementById("feedbackPanelLink"),
     sourceMetaTotal: document.getElementById("sourceMetaTotal"),
     sourceMetaDate: document.getElementById("sourceMetaDate"),
+    periodDashboard: document.getElementById("periodDashboard"),
+    dashboardThresholdSelect: document.getElementById("dashboardThresholdSelect"),
+    dashboardKpis: document.getElementById("dashboardKpis"),
+    prevalenceChart: document.getElementById("prevalenceChart"),
+    incidenceChart: document.getElementById("incidenceChart"),
+    dashboardRows: document.getElementById("dashboardRows"),
+    dashboardNote: document.getElementById("dashboardNote"),
   };
 
   function issueUrl(channel) {
@@ -108,6 +116,25 @@
   function formatRate(value) {
     if (value === null || value === undefined || value === "") return "-";
     return `${Math.round(Number(value) * 100)}%`;
+  }
+
+  function formatPercent(value, digits = 1) {
+    if (value === null || value === undefined || value === "") return "-";
+    return `${(Number(value) * 100).toFixed(digits)}%`;
+  }
+
+  function formatSignedPoints(value) {
+    if (value === null || value === undefined || value === "") return "-";
+    const points = Number(value) * 100;
+    const sign = points > 0 ? "+" : "";
+    return `${sign}${points.toFixed(1)}pt`;
+  }
+
+  function formatRelative(value) {
+    if (value === null || value === undefined || value === "") return "-";
+    const pct = Number(value) * 100;
+    const sign = pct > 0 ? "+" : "";
+    return `${sign}${pct.toFixed(1)}%`;
   }
 
   function escapeHtml(value) {
@@ -214,6 +241,171 @@
     }
   }
 
+  function dashboardIncidenceRows(thresholdDays) {
+    if (!semiannualDashboard) return [];
+    return (semiannualDashboard.incidence || []).filter((row) => Number(row.thresholdDays) === Number(thresholdDays));
+  }
+
+  function incidenceByPeriod(thresholdDays) {
+    return dashboardIncidenceRows(thresholdDays).reduce((index, row) => {
+      index[row.period] = row;
+      return index;
+    }, {});
+  }
+
+  function selectedDashboardThreshold() {
+    return Number(elements.dashboardThresholdSelect?.value || semiannualDashboard?.mainThresholdDays || 30);
+  }
+
+  function renderDashboardControls() {
+    if (!elements.dashboardThresholdSelect || !semiannualDashboard) return;
+    elements.dashboardThresholdSelect.innerHTML = (semiannualDashboard.thresholds || [30])
+      .map((days) => `<option value="${escapeHtml(days)}">${escapeHtml(days)}日以上</option>`)
+      .join("");
+    elements.dashboardThresholdSelect.value = String(semiannualDashboard.mainThresholdDays || 30);
+  }
+
+  function renderDashboardKpis() {
+    if (!elements.dashboardKpis || !semiannualDashboard) return;
+    const thresholdDays = selectedDashboardThreshold();
+    const latestPeriod = semiannualDashboard.kpis?.latestPeriod || "-";
+    const previousPeriod = semiannualDashboard.kpis?.previousPeriod || "-";
+    const selectedLatest = dashboardIncidenceRows(thresholdDays).find((row) => row.period === latestPeriod) || {};
+    const cards = [
+      {
+        label: `${latestPeriod} no-ad率`,
+        value: formatPercent(semiannualDashboard.kpis?.latestLikelyNotRate),
+        detail: `${previousPeriod}比 ${formatSignedPoints(semiannualDashboard.kpis?.latestLikelyNotDeltaPoints)} / ${formatRelative(semiannualDashboard.kpis?.latestLikelyNotRelativeChange)}`,
+        tone: "blue",
+      },
+      {
+        label: `${thresholdDays}日停止 下限`,
+        value: formatPercent(selectedLatest.lowerBoundRate),
+        detail: "広告シグナル判定済みの停止疑い",
+        tone: "red",
+      },
+      {
+        label: "未判定候補",
+        value: formatNumber(selectedLatest.missingAdResultInactiveCandidates),
+        detail: "広告シグナル確認が必要",
+        tone: "gray",
+      },
+      {
+        label: "未判定含む上限",
+        value: formatPercent(selectedLatest.upperBoundRate),
+        detail: selectedLatest.eventWindowComplete ? "期間確定" : "期間途中の速報値",
+        tone: "black",
+      },
+    ];
+    elements.dashboardKpis.innerHTML = cards
+      .map(
+        (card) => `
+          <article class="dashboard-kpi dashboard-kpi-${escapeHtml(card.tone)}">
+            <span>${escapeHtml(card.label)}</span>
+            <strong>${escapeHtml(card.value)}</strong>
+            <em>${escapeHtml(card.detail)}</em>
+          </article>
+        `
+      )
+      .join("");
+  }
+
+  function renderPrevalenceChart() {
+    if (!elements.prevalenceChart || !semiannualDashboard) return;
+    const rows = semiannualDashboard.prevalence || [];
+    const maxRate = Math.max(0.12, ...rows.map((row) => Number(row.currentLikelyNotRateAmongChecked || 0)));
+    elements.prevalenceChart.innerHTML = rows
+      .map((row) => {
+        const width = Math.max(1, (Number(row.currentLikelyNotRateAmongChecked || 0) / maxRate) * 100);
+        const coverage = formatPercent(row.checkedCoverageRate, 0);
+        return `
+          <div class="chart-row">
+            <div class="chart-label">
+              <span>${escapeHtml(row.period)}</span>
+              <small>判定済み ${escapeHtml(coverage)}</small>
+            </div>
+            <div class="chart-track" aria-hidden="true">
+              <div class="chart-fill chart-fill-blue" style="width:${width.toFixed(2)}%"></div>
+            </div>
+            <strong>${escapeHtml(formatPercent(row.currentLikelyNotRateAmongChecked))}</strong>
+          </div>
+        `;
+      })
+      .join("");
+  }
+
+  function renderIncidenceChart() {
+    if (!elements.incidenceChart || !semiannualDashboard) return;
+    const rows = dashboardIncidenceRows(selectedDashboardThreshold());
+    const maxRate = Math.max(0.1, ...rows.map((row) => Number(row.upperBoundRate || 0)));
+    elements.incidenceChart.innerHTML = rows
+      .map((row) => {
+        const lower = Number(row.lowerBoundRate || 0);
+        const upper = Number(row.upperBoundRate || 0);
+        const lowerWidth = Math.max(0, (lower / maxRate) * 100);
+        const unknownWidth = Math.max(0, ((upper - lower) / maxRate) * 100);
+        return `
+          <div class="chart-row">
+            <div class="chart-label">
+              <span>${escapeHtml(row.period)}</span>
+              <small>${row.eventWindowComplete ? "確定" : "速報"}</small>
+            </div>
+            <div class="chart-track chart-track-range" aria-hidden="true">
+              <div class="chart-fill chart-fill-red" style="width:${lowerWidth.toFixed(2)}%"></div>
+              <div class="chart-fill chart-fill-gray" style="width:${unknownWidth.toFixed(2)}%"></div>
+            </div>
+            <strong>${escapeHtml(formatPercent(lower))} / ${escapeHtml(formatPercent(upper))}</strong>
+          </div>
+        `;
+      })
+      .join("");
+  }
+
+  function renderDashboardTable() {
+    if (!elements.dashboardRows || !semiannualDashboard) return;
+    const thresholdDays = selectedDashboardThreshold();
+    const incidence = incidenceByPeriod(thresholdDays);
+    elements.dashboardRows.innerHTML = (semiannualDashboard.prevalence || [])
+      .map((row) => {
+        const event = incidence[row.period] || {};
+        return `
+          <tr>
+            <td>${escapeHtml(row.period)}</td>
+            <td>${formatNumber(row.activeChannelsObserved)}</td>
+            <td>${escapeHtml(formatPercent(row.currentLikelyNotRateAmongChecked))}</td>
+            <td>${escapeHtml(formatSignedPoints(row.previousRateDeltaPoints))}</td>
+            <td>${escapeHtml(formatPercent(event.lowerBoundRate))}</td>
+            <td>${formatNumber(event.missingAdResultInactiveCandidates)}</td>
+            <td>${escapeHtml(formatPercent(event.upperBoundRate))}</td>
+            <td>${event.eventWindowComplete ? "確定" : "速報"}</td>
+          </tr>
+        `;
+      })
+      .join("");
+  }
+
+  function renderDashboardNote() {
+    if (!elements.dashboardNote || !semiannualDashboard) return;
+    elements.dashboardNote.textContent = [
+      `作成基準日: ${semiannualDashboard.asOf || "-"}`,
+      "no-ad率は収益停止の公式値ではなく、公開動画ページ上の広告表示シグナルの比率です。",
+      "上限は未判定候補をすべて停止疑いとみなした場合の最大幅です。",
+    ].join(" / ");
+  }
+
+  function renderPeriodDashboard() {
+    if (!elements.periodDashboard) return;
+    if (!semiannualDashboard) {
+      elements.periodDashboard.hidden = true;
+      return;
+    }
+    renderDashboardKpis();
+    renderPrevalenceChart();
+    renderIncidenceChart();
+    renderDashboardTable();
+    renderDashboardNote();
+  }
+
   function initFeedbackLinks() {
     const url = issueUrl();
     if (elements.globalFeedbackLink) elements.globalFeedbackLink.href = url;
@@ -224,14 +416,18 @@
     elements.generatedAt.textContent = formatDate(data.summary.generatedAt);
     initSourceMeta();
     initFeedbackLinks();
+    renderDashboardControls();
+    renderPeriodDashboard();
     renderSummary();
     renderRows();
     [elements.searchInput, elements.resultFilter, elements.confidenceFilter, elements.sortSelect].forEach((element) => {
       element.addEventListener("input", renderRows);
       element.addEventListener("change", renderRows);
     });
+    if (elements.dashboardThresholdSelect) {
+      elements.dashboardThresholdSelect.addEventListener("change", renderPeriodDashboard);
+    }
   }
 
   init();
 })();
-

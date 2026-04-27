@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="YouTubeチャンネルが収益化停止または未収益化の可能性があるかを、公開動画上の外部観測データから整理した暫定レポート。">
     <meta name="referrer" content="strict-origin-when-cross-origin">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://yt3.ggpht.com https://yt3.googleusercontent.com data:; font-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'; upgrade-insecure-requests">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' https://yt3.ggpht.com https://yt3.googleusercontent.com data:; font-src 'self' data:; connect-src https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'; upgrade-insecure-requests">
     <title>YouTube収益化停止 可能性リスト</title>
-    <link rel="stylesheet" href="assets/styles.css?v=20260425-7">
+    <link rel="stylesheet" href="assets/styles.css?v=20260427-dashboard1">
   </head>
   <body>
     <header class="site-header">
@@ -54,6 +54,57 @@
       </section>
 
       <section class="summary-grid" id="summaryGrid" aria-label="集計サマリ"></section>
+
+      <section class="period-dashboard" id="periodDashboard" aria-label="期間別ダッシュボード">
+        <div class="dashboard-head">
+          <div>
+            <p class="section-label">Semiannual Dashboard</p>
+            <h2>2026年以降に増えているか</h2>
+            <p class="dashboard-lead">
+              半期ごとの広告シグナル率と、投稿停止を組み合わせた収益停止疑い発生率 proxy を並べています。
+            </p>
+          </div>
+          <label class="dashboard-control">
+            <span>投稿停止</span>
+            <select id="dashboardThresholdSelect" aria-label="投稿停止日数"></select>
+          </label>
+        </div>
+        <div class="dashboard-kpis" id="dashboardKpis"></div>
+        <div class="dashboard-layout">
+          <article class="dashboard-panel">
+            <div class="panel-head">
+              <h3>半期別 no-ad シグナル率</h3>
+              <p>各半期に活動が観測され、広告判定済みのチャンネル内比率</p>
+            </div>
+            <div class="rate-chart" id="prevalenceChart"></div>
+          </article>
+          <article class="dashboard-panel">
+            <div class="panel-head">
+              <h3>投稿停止 proxy の幅</h3>
+              <p>既知の下限と、未判定候補を含めた上限</p>
+            </div>
+            <div class="range-chart" id="incidenceChart"></div>
+          </article>
+        </div>
+        <div class="dashboard-table-wrap">
+          <table class="dashboard-table">
+            <thead>
+              <tr>
+                <th>期間</th>
+                <th>活動ch</th>
+                <th>no-ad率</th>
+                <th>前期差</th>
+                <th>停止疑い下限</th>
+                <th>未判定候補</th>
+                <th>上限</th>
+                <th>期間確定</th>
+              </tr>
+            </thead>
+            <tbody id="dashboardRows"></tbody>
+          </table>
+        </div>
+        <p class="dashboard-note" id="dashboardNote"></p>
+      </section>
 
       <section class="toolbar" aria-label="絞り込み">
         <label class="search-box">
@@ -133,10 +184,10 @@
       </section>
     </main>
 
-    <script src="assets/data.js?v=20260425-7"></script>
-    <script src="assets/app.js?v=20260425-7"></script>
+    <script src="assets/data.js?v=20260427-dashboard1"></script>
+    <script src="assets/app.js?v=20260427-dashboard1"></script>
     <!-- Cloudflare Web Analytics -->
-    <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "ef2305f18ca64c5dab2f9a0f2eccdabe"}'></script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "ef2305f18ca64c5dab2f9a0f2eccdabe"}'></script>
     <!-- End Cloudflare Web Analytics -->
   </body>
 </html>
