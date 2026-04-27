@@ -285,14 +285,20 @@
     const latest = latestPrevalenceRow();
     const thresholdDays = selectedDashboardThreshold();
     const latestEvent = dashboardIncidenceRows(thresholdDays).find((row) => row.period === latest.period) || {};
+    const inactiveCandidates = Number(latestEvent.inactiveCandidatesAllResults || 0);
+    const likelyNot = Number(latestEvent.likelyNotInactiveEvents || 0);
+    const waiting = Number(latestEvent.missingAdResultInactiveCandidates || 0);
+    const failed = Number(latestEvent.failedAdResultInactiveCandidates || 0);
+    const inconclusive = Number(latestEvent.inconclusiveInactiveCandidates || 0);
+    const inconclusiveText = inconclusive ? `、判定保留${formatNumber(inconclusive)}件` : "";
     elements.dashboardVerdict.innerHTML = `
       <div class="verdict-main">
         <span>結論</span>
-        <strong>まだ判断できません</strong>
+        <strong>追加確認が必要</strong>
       </div>
       <p>
         ${escapeHtml(formatPeriod(latest.period))}は、広告なし割合が${escapeHtml(formatPercent(latest.currentLikelyNotRateAmongChecked))}でした。
-        ただし、${escapeHtml(thresholdDays)}日以上投稿が止まった候補のうち${escapeHtml(formatNumber(latestEvent.missingAdResultInactiveCandidates))}件は、広告確認がまだ終わっていません。
+        ${escapeHtml(thresholdDays)}日以上投稿が止まった候補${escapeHtml(formatNumber(inactiveCandidates))}件のうち、広告なし${escapeHtml(formatNumber(likelyNot))}件、広告確認待ち${escapeHtml(formatNumber(waiting))}件、取得失敗${escapeHtml(formatNumber(failed))}件${escapeHtml(inconclusiveText)}です。
       </p>
     `;
   }
@@ -325,10 +331,16 @@
         tone: "red",
       },
       {
-        label: "広告確認が未完了",
+        label: "広告確認待ち",
         value: formatNumber(selectedLatest.missingAdResultInactiveCandidates),
-        detail: "投稿停止候補の確認がまだ残っている",
+        detail: "まだ広告チェックを実行できていない",
         tone: "gray",
+      },
+      {
+        label: "取得失敗",
+        value: formatNumber(selectedLatest.failedAdResultInactiveCandidates),
+        detail: "ページ取得エラーなどで確認できなかった",
+        tone: "black",
       },
     ];
     elements.dashboardKpis.innerHTML = cards
@@ -371,13 +383,32 @@
   function renderIncidenceChart() {
     if (!elements.incidenceChart || !semiannualDashboard) return;
     const rows = dashboardIncidenceRows(selectedDashboardThreshold());
-    const maxCount = Math.max(1, ...rows.map((row) => Number(row.missingAdResultInactiveCandidates || 0) + Number(row.likelyNotInactiveEvents || 0)));
+    const maxCount = Math.max(
+      1,
+      ...rows.map(
+        (row) =>
+          Number(row.likelyNotInactiveEvents || 0) +
+          Number(row.missingAdResultInactiveCandidates || 0) +
+          Number(row.failedAdResultInactiveCandidates || 0) +
+          Number(row.inconclusiveInactiveCandidates || 0)
+      )
+    );
     elements.incidenceChart.innerHTML = rows
       .map((row) => {
         const confirmed = Number(row.likelyNotInactiveEvents || 0);
-        const unknown = Number(row.missingAdResultInactiveCandidates || 0);
+        const waiting = Number(row.missingAdResultInactiveCandidates || 0);
+        const failed = Number(row.failedAdResultInactiveCandidates || 0);
+        const inconclusive = Number(row.inconclusiveInactiveCandidates || 0);
         const confirmedWidth = Math.max(0, (confirmed / maxCount) * 100);
-        const unknownWidth = Math.max(0, (unknown / maxCount) * 100);
+        const waitingWidth = Math.max(0, (waiting / maxCount) * 100);
+        const failedWidth = Math.max(0, (failed / maxCount) * 100);
+        const inconclusiveWidth = Math.max(0, (inconclusive / maxCount) * 100);
+        const summaryParts = [
+          `広告なし ${formatNumber(confirmed)}`,
+          `待ち ${formatNumber(waiting)}`,
+          `失敗 ${formatNumber(failed)}`,
+        ];
+        if (inconclusive) summaryParts.push(`保留 ${formatNumber(inconclusive)}`);
         return `
           <div class="chart-row">
             <div class="chart-label">
@@ -386,9 +417,11 @@
             </div>
             <div class="chart-track chart-track-range" aria-hidden="true">
               <div class="chart-fill chart-fill-red" style="width:${confirmedWidth.toFixed(2)}%"></div>
-              <div class="chart-fill chart-fill-gray" style="width:${unknownWidth.toFixed(2)}%"></div>
+              <div class="chart-fill chart-fill-gray" style="width:${waitingWidth.toFixed(2)}%"></div>
+              <div class="chart-fill chart-fill-black" style="width:${failedWidth.toFixed(2)}%"></div>
+              <div class="chart-fill chart-fill-yellow" style="width:${inconclusiveWidth.toFixed(2)}%"></div>
             </div>
-            <strong>広告なし ${escapeHtml(formatNumber(confirmed))} / 未確認 ${escapeHtml(formatNumber(unknown))}</strong>
+            <strong>${escapeHtml(summaryParts.join(" / "))}</strong>
           </div>
         `;
       })
@@ -410,6 +443,8 @@
             <td>${escapeHtml(formatSignedPoints(row.previousRateDeltaPoints))}</td>
             <td>${formatNumber(event.likelyNotInactiveEvents)}</td>
             <td>${formatNumber(event.missingAdResultInactiveCandidates)}</td>
+            <td>${formatNumber(event.failedAdResultInactiveCandidates)}</td>
+            <td>${formatNumber(event.inconclusiveInactiveCandidates)}</td>
             <td>${event.eventWindowComplete ? "期間終了" : "途中"}</td>
           </tr>
         `;
@@ -421,7 +456,8 @@
     if (!elements.dashboardNote || !semiannualDashboard) return;
     elements.dashboardNote.textContent = [
       `作成基準日: ${semiannualDashboard.asOf || "-"}`,
-      "未確認とは、投稿停止候補の広告表示チェックがまだ終わっていないという意味です。",
+      "広告確認待ちは、まだ広告チェックを実行できていない件数です。",
+      "取得失敗は、HTTP 429などで動画ページを取得できなかった件数です。",
     ].join(" / ");
   }
 

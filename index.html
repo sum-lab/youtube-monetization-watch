@@ -7,7 +7,7 @@
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' https://yt3.ggpht.com https://yt3.googleusercontent.com data:; font-src 'self' data:; connect-src https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'; upgrade-insecure-requests">
     <title>YouTube収益化停止 可能性リスト</title>
-    <link rel="stylesheet" href="assets/styles.css?v=20260427-dashboard7">
+    <link rel="stylesheet" href="assets/styles.css?v=20260427-dashboard8">
   </head>
   <body>
     <header class="site-header">
@@ -62,7 +62,7 @@
             <h2>「収益化停止チャンネル」は増えたのか？</h2>
             <p class="dashboard-lead">
               答えはまだ出せません。2026年上半期は、広告なしチャンネルの割合が高めです。
-              ただし、それが本当に収益化停止の増加なのかは、投稿が止まった候補の広告確認が終わるまで判断できません。
+              ただし、それが本当に収益化停止の増加なのかは、投稿停止後の広告確認をやり切るまで判断できません。
             </p>
           </div>
           <label class="dashboard-control">
@@ -71,8 +71,9 @@
           </label>
         </div>
         <div class="dashboard-verdict" id="dashboardVerdict"></div>
-        <div class="dashboard-glossary" aria-label="未確認の意味">
-          <p><strong>未確認</strong> 投稿が止まった候補について、広告が出るかどうかのチェックがまだ終わっていない状態です。</p>
+        <div class="dashboard-glossary" aria-label="広告確認の状態">
+          <p><strong>広告確認待ち</strong> 投稿が止まった候補について、広告チェックをまだ実行できていない状態です。</p>
+          <p><strong>取得失敗</strong> HTTP 429などで動画ページを取得できず、広告チェックが完了しなかった状態です。</p>
         </div>
         <div class="dashboard-kpis" id="dashboardKpis"></div>
         <div class="dashboard-layout">
@@ -85,8 +86,8 @@
           </article>
           <article class="dashboard-panel">
             <div class="panel-head">
-              <h3>広告確認が終わっていない候補</h3>
-              <p>投稿が止まった候補のうち、広告の有無をまだ確認できていない数</p>
+              <h3>投稿停止後の確認結果</h3>
+              <p>広告なし、広告確認待ち、取得失敗を分けて表示</p>
             </div>
             <div class="range-chart" id="incidenceChart"></div>
           </article>
@@ -102,7 +103,9 @@
                   <th>広告なし割合</th>
                   <th>前の半期との差</th>
                   <th>投稿停止後も広告なし</th>
-                  <th>広告確認が未完了</th>
+                  <th>広告確認待ち</th>
+                  <th>取得失敗</th>
+                  <th>判定保留</th>
                   <th>状態</th>
                 </tr>
               </thead>
@@ -191,8 +194,8 @@
       </section>
     </main>
 
-    <script src="assets/data.js?v=20260427-dashboard7"></script>
-    <script src="assets/app.js?v=20260427-dashboard7"></script>
+    <script src="assets/data.js?v=20260427-dashboard8"></script>
+    <script src="assets/app.js?v=20260427-dashboard8"></script>
     <!-- Cloudflare Web Analytics -->
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "ef2305f18ca64c5dab2f9a0f2eccdabe"}'></script>
     <!-- End Cloudflare Web Analytics -->

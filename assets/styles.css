@@ -299,7 +299,7 @@ main {
 
 .dashboard-kpis {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 14px;
 }
@@ -420,6 +420,10 @@ main {
   border-top: 4px solid #4d4d4d;
 }
 
+.dashboard-kpi-black strong {
+  color: #242424;
+}
+
 .dashboard-layout {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -452,7 +456,7 @@ main {
 
 .chart-row {
   display: grid;
-  grid-template-columns: 86px minmax(140px, 1fr) 84px;
+  grid-template-columns: 86px minmax(140px, 1fr) minmax(180px, max-content);
   gap: 10px;
   align-items: center;
   min-height: 38px;
@@ -499,6 +503,14 @@ main {
   background: #999;
 }
 
+.chart-fill-black {
+  background: #4d4d4d;
+}
+
+.chart-fill-yellow {
+  background: #c3a443;
+}
+
 .chart-row strong {
   text-align: right;
 }
@@ -526,7 +538,7 @@ main {
 }
 
 .dashboard-table {
-  min-width: 860px;
+  min-width: 1040px;
 }
 
 .dashboard-table th {
@@ -759,7 +771,7 @@ tbody tr:hover {
   }
 
   .dashboard-kpis {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
