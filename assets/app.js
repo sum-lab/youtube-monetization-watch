@@ -26,11 +26,9 @@
     sourceMetaTotal: document.getElementById("sourceMetaTotal"),
     sourceMetaDate: document.getElementById("sourceMetaDate"),
     periodDashboard: document.getElementById("periodDashboard"),
-    dashboardThresholdSelect: document.getElementById("dashboardThresholdSelect"),
     dashboardVerdict: document.getElementById("dashboardVerdict"),
     dashboardKpis: document.getElementById("dashboardKpis"),
     prevalenceChart: document.getElementById("prevalenceChart"),
-    incidenceChart: document.getElementById("incidenceChart"),
     dashboardRows: document.getElementById("dashboardRows"),
     dashboardNote: document.getElementById("dashboardNote"),
   };
@@ -248,98 +246,80 @@
     }
   }
 
-  function dashboardIncidenceRows(thresholdDays) {
-    if (!semiannualDashboard) return [];
-    return (semiannualDashboard.incidence || []).filter((row) => Number(row.thresholdDays) === Number(thresholdDays));
+  function averageRate(rows) {
+    const values = rows.map((row) => Number(row.currentLikelyNotRateAmongChecked || 0)).filter((value) => Number.isFinite(value));
+    if (!values.length) return null;
+    return values.reduce((sum, value) => sum + value, 0) / values.length;
   }
 
-  function incidenceByPeriod(thresholdDays) {
-    return dashboardIncidenceRows(thresholdDays).reduce((index, row) => {
-      index[row.period] = row;
-      return index;
-    }, {});
+  function highestRateRow(rows) {
+    return rows.reduce((best, row) => {
+      if (!best) return row;
+      return Number(row.currentLikelyNotRateAmongChecked || 0) > Number(best.currentLikelyNotRateAmongChecked || 0) ? row : best;
+    }, null);
   }
 
-  function selectedDashboardThreshold() {
-    return Number(elements.dashboardThresholdSelect?.value || semiannualDashboard?.mainThresholdDays || 30);
-  }
-
-  function latestPrevalenceRow() {
-    const rows = semiannualDashboard?.prevalence || [];
-    return rows[rows.length - 1] || {};
-  }
-
-  function previousPrevalenceRows() {
-    const rows = semiannualDashboard?.prevalence || [];
-    return rows.slice(0, Math.max(0, rows.length - 1));
-  }
-
-  function bestPreviousCoverageRate() {
-    const rows = previousPrevalenceRows();
-    if (!rows.length) return null;
-    return Math.max(...rows.map((row) => Number(row.checkedCoverageRate || 0)));
+  function formatPeriodShort(value) {
+    const match = String(value || "").match(/^(\d{4})H([12])$/);
+    if (!match) return String(value || "-");
+    return `${match[1]}${match[2] === "1" ? "上" : "下"}`;
   }
 
   function renderDashboardVerdict() {
     if (!elements.dashboardVerdict || !semiannualDashboard) return;
-    const latest = latestPrevalenceRow();
-    const thresholdDays = selectedDashboardThreshold();
-    const latestEvent = dashboardIncidenceRows(thresholdDays).find((row) => row.period === latest.period) || {};
-    const inactiveCandidates = Number(latestEvent.inactiveCandidatesAllResults || 0);
-    const likelyNot = Number(latestEvent.likelyNotInactiveEvents || 0);
-    const waiting = Number(latestEvent.missingAdResultInactiveCandidates || 0);
-    const failed = Number(latestEvent.failedAdResultInactiveCandidates || 0);
-    const inconclusive = Number(latestEvent.inconclusiveInactiveCandidates || 0);
-    const inconclusiveText = inconclusive ? `、判定保留${formatNumber(inconclusive)}件` : "";
+    const rows = semiannualDashboard.prevalence || [];
+    const latest = rows[rows.length - 1] || {};
+    const pastRows = rows.slice(0, -1);
+    const pastAverage = averageRate(pastRows);
+    const deltaFromPast = pastAverage === null ? null : Number(latest.currentLikelyNotRateAmongChecked || 0) - pastAverage;
+    const highest = highestRateRow(rows) || {};
+    const previous = pastRows[pastRows.length - 1] || {};
     elements.dashboardVerdict.innerHTML = `
       <div class="verdict-main">
         <span>結論</span>
-        <strong>追加確認が必要</strong>
+        <strong>増加とは言い切れません</strong>
       </div>
       <p>
-        ${escapeHtml(formatPeriod(latest.period))}は、収益化停止・未収益化率が${escapeHtml(formatPercent(latest.currentLikelyNotRateAmongChecked))}でした。
-        ${escapeHtml(thresholdDays)}日以上投稿が止まった候補${escapeHtml(formatNumber(inactiveCandidates))}件のうち、収益化停止・未収益化${escapeHtml(formatNumber(likelyNot))}件、判定待ち${escapeHtml(formatNumber(waiting))}件、取得失敗${escapeHtml(formatNumber(failed))}件${escapeHtml(inconclusiveText)}です。
+        ${escapeHtml(formatPeriod(latest.period))}は${escapeHtml(formatPercent(latest.currentLikelyNotRateAmongChecked))}です。
+        ${escapeHtml(formatPeriod(previous.period))}より${escapeHtml(formatSignedPoints(latest.previousRateDeltaPoints))}ですが、
+        2023年から2025年までの平均${escapeHtml(formatPercent(pastAverage))}より${escapeHtml(formatSignedPoints(deltaFromPast))}で、
+        過去最高の${escapeHtml(formatPercent(highest.currentLikelyNotRateAmongChecked))}を下回っています。
       </p>
     `;
   }
 
-  function renderDashboardControls() {
-    if (!elements.dashboardThresholdSelect || !semiannualDashboard) return;
-    elements.dashboardThresholdSelect.innerHTML = (semiannualDashboard.thresholds || [30])
-      .map((days) => `<option value="${escapeHtml(days)}">${escapeHtml(days)}日以上</option>`)
-      .join("");
-    elements.dashboardThresholdSelect.value = String(semiannualDashboard.mainThresholdDays || 30);
-  }
-
   function renderDashboardKpis() {
     if (!elements.dashboardKpis || !semiannualDashboard) return;
-    const thresholdDays = selectedDashboardThreshold();
-    const latestPeriod = semiannualDashboard.kpis?.latestPeriod || "-";
-    const previousPeriod = semiannualDashboard.kpis?.previousPeriod || "-";
-    const selectedLatest = dashboardIncidenceRows(thresholdDays).find((row) => row.period === latestPeriod) || {};
+    const rows = semiannualDashboard.prevalence || [];
+    const latest = rows[rows.length - 1] || {};
+    const pastRows = rows.slice(0, -1);
+    const previous = pastRows[pastRows.length - 1] || {};
+    const pastAverage = averageRate(pastRows);
+    const deltaFromPast = pastAverage === null ? null : Number(latest.currentLikelyNotRateAmongChecked || 0) - pastAverage;
+    const highest = highestRateRow(rows) || {};
     const cards = [
       {
-        label: "収益化停止・未収益化率",
-        value: formatPercent(semiannualDashboard.kpis?.latestLikelyNotRate),
-        detail: `${formatPeriod(latestPeriod)}。${formatPeriod(previousPeriod)}より${formatSignedPoints(semiannualDashboard.kpis?.latestLikelyNotDeltaPoints)}`,
+        label: formatPeriod(latest.period),
+        value: formatPercent(latest.currentLikelyNotRateAmongChecked),
+        detail: "収益化停止・未収益化率",
         tone: "blue",
       },
       {
-        label: "投稿停止後も収益化停止・未収益化",
-        value: formatNumber(selectedLatest.likelyNotInactiveEvents),
-        detail: `${thresholdDays}日以上投稿が止まり、収益化停止・未収益化`,
-        tone: "red",
+        label: "過去平均との差",
+        value: formatSignedPoints(deltaFromPast),
+        detail: `2023-2025平均 ${formatPercent(pastAverage)}`,
+        tone: Number(deltaFromPast || 0) > 0 ? "red" : "gray",
       },
       {
-        label: "判定待ち",
-        value: formatNumber(selectedLatest.missingAdResultInactiveCandidates),
-        detail: "まだ追加判定を実行できていない",
-        tone: "gray",
+        label: "直前との差",
+        value: formatSignedPoints(latest.previousRateDeltaPoints),
+        detail: `${formatPeriod(previous.period)}比`,
+        tone: Number(latest.previousRateDeltaPoints || 0) > 0 ? "red" : "gray",
       },
       {
-        label: "取得失敗",
-        value: formatNumber(selectedLatest.failedAdResultInactiveCandidates),
-        detail: "ページ取得エラーなどで確認できなかった",
+        label: "過去最高",
+        value: formatPercent(highest.currentLikelyNotRateAmongChecked),
+        detail: formatPeriod(highest.period),
         tone: "black",
       },
     ];
@@ -359,93 +339,72 @@
   function renderPrevalenceChart() {
     if (!elements.prevalenceChart || !semiannualDashboard) return;
     const rows = semiannualDashboard.prevalence || [];
-    const maxRate = Math.max(0.12, ...rows.map((row) => Number(row.currentLikelyNotRateAmongChecked || 0)));
-    elements.prevalenceChart.innerHTML = rows
-      .map((row) => {
-        const width = Math.max(1, (Number(row.currentLikelyNotRateAmongChecked || 0) / maxRate) * 100);
-        const coverage = formatPercent(row.checkedCoverageRate, 0);
+    if (!rows.length) return;
+    const pastAverage = averageRate(rows.slice(0, -1));
+    const width = 760;
+    const height = 320;
+    const margin = { top: 24, right: 28, bottom: 58, left: 58 };
+    const chartWidth = width - margin.left - margin.right;
+    const chartHeight = height - margin.top - margin.bottom;
+    const maxRate = Math.max(0.25, ...rows.map((row) => Number(row.currentLikelyNotRateAmongChecked || 0))) * 1.05;
+    const x = (index) => margin.left + (rows.length === 1 ? chartWidth / 2 : (chartWidth * index) / (rows.length - 1));
+    const y = (rate) => margin.top + chartHeight - (Number(rate || 0) / maxRate) * chartHeight;
+    const points = rows.map((row, index) => `${x(index).toFixed(1)},${y(row.currentLikelyNotRateAmongChecked).toFixed(1)}`).join(" ");
+    const ticks = [0, 0.05, 0.1, 0.15, 0.2];
+    const grid = ticks
+      .map((tick) => {
+        const ty = y(tick);
         return `
-          <div class="chart-row">
-            <div class="chart-label">
-              <span>${escapeHtml(formatPeriod(row.period))}</span>
-              <small>確認済み ${escapeHtml(coverage)}</small>
-            </div>
-            <div class="chart-track" aria-hidden="true">
-              <div class="chart-fill chart-fill-blue" style="width:${width.toFixed(2)}%"></div>
-            </div>
-            <strong>${escapeHtml(formatPercent(row.currentLikelyNotRateAmongChecked))}</strong>
-          </div>
+          <line class="dashboard-chart-grid" x1="${margin.left}" y1="${ty.toFixed(1)}" x2="${width - margin.right}" y2="${ty.toFixed(1)}"></line>
+          <text class="dashboard-chart-y" x="${margin.left - 10}" y="${(ty + 4).toFixed(1)}" text-anchor="end">${escapeHtml(formatPercent(tick, 0))}</text>
         `;
       })
       .join("");
-  }
-
-  function renderIncidenceChart() {
-    if (!elements.incidenceChart || !semiannualDashboard) return;
-    const rows = dashboardIncidenceRows(selectedDashboardThreshold());
-    const maxCount = Math.max(
-      1,
-      ...rows.map(
-        (row) =>
-          Number(row.likelyNotInactiveEvents || 0) +
-          Number(row.missingAdResultInactiveCandidates || 0) +
-          Number(row.failedAdResultInactiveCandidates || 0) +
-          Number(row.inconclusiveInactiveCandidates || 0)
-      )
-    );
-    elements.incidenceChart.innerHTML = rows
-      .map((row) => {
-        const confirmed = Number(row.likelyNotInactiveEvents || 0);
-        const waiting = Number(row.missingAdResultInactiveCandidates || 0);
-        const failed = Number(row.failedAdResultInactiveCandidates || 0);
-        const inconclusive = Number(row.inconclusiveInactiveCandidates || 0);
-        const confirmedWidth = Math.max(0, (confirmed / maxCount) * 100);
-        const waitingWidth = Math.max(0, (waiting / maxCount) * 100);
-        const failedWidth = Math.max(0, (failed / maxCount) * 100);
-        const inconclusiveWidth = Math.max(0, (inconclusive / maxCount) * 100);
-        const summaryParts = [
-          `収益化停止・未収益化 ${formatNumber(confirmed)}`,
-          `待ち ${formatNumber(waiting)}`,
-          `失敗 ${formatNumber(failed)}`,
-        ];
-        if (inconclusive) summaryParts.push(`保留 ${formatNumber(inconclusive)}`);
+    const averageLine =
+      pastAverage === null
+        ? ""
+        : `<line class="dashboard-chart-average" x1="${margin.left}" y1="${y(pastAverage).toFixed(1)}" x2="${width - margin.right}" y2="${y(pastAverage).toFixed(1)}"></line>`;
+    const markers = rows
+      .map((row, index) => {
+        const cx = x(index);
+        const cy = y(row.currentLikelyNotRateAmongChecked);
+        const isLatest = index === rows.length - 1;
         return `
-          <div class="chart-row">
-            <div class="chart-label">
-              <span>${escapeHtml(formatPeriod(row.period))}</span>
-              <small>${row.eventWindowComplete ? "期間終了" : "途中"}</small>
-            </div>
-            <div class="chart-track chart-track-range" aria-hidden="true">
-              <div class="chart-fill chart-fill-red" style="width:${confirmedWidth.toFixed(2)}%"></div>
-              <div class="chart-fill chart-fill-gray" style="width:${waitingWidth.toFixed(2)}%"></div>
-              <div class="chart-fill chart-fill-black" style="width:${failedWidth.toFixed(2)}%"></div>
-              <div class="chart-fill chart-fill-yellow" style="width:${inconclusiveWidth.toFixed(2)}%"></div>
-            </div>
-            <strong>${escapeHtml(summaryParts.join(" / "))}</strong>
-          </div>
+          <g class="${isLatest ? "dashboard-point-current" : "dashboard-point"}">
+            <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${isLatest ? 6 : 4}"></circle>
+            <text x="${cx.toFixed(1)}" y="${(cy - 12).toFixed(1)}" text-anchor="middle">${escapeHtml(formatPercent(row.currentLikelyNotRateAmongChecked))}</text>
+            <text class="dashboard-chart-x" x="${cx.toFixed(1)}" y="${height - 24}" text-anchor="middle">${escapeHtml(formatPeriodShort(row.period))}</text>
+          </g>
         `;
       })
       .join("");
+    elements.prevalenceChart.innerHTML = `
+      <svg class="dashboard-line-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="半期別の収益化停止・未収益化率">
+        <title>半期別の収益化停止・未収益化率</title>
+        ${grid}
+        ${averageLine}
+        <line class="dashboard-chart-axis" x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}"></line>
+        <line class="dashboard-chart-axis" x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${height - margin.bottom}"></line>
+        <polyline class="dashboard-line-series" points="${points}"></polyline>
+        ${markers}
+      </svg>
+      <div class="dashboard-chart-legend">
+        <span><i class="legend-line-current"></i>半期別の率</span>
+        <span><i class="legend-line-average"></i>2023-2025平均</span>
+      </div>
+    `;
   }
 
   function renderDashboardTable() {
     if (!elements.dashboardRows || !semiannualDashboard) return;
-    const thresholdDays = selectedDashboardThreshold();
-    const incidence = incidenceByPeriod(thresholdDays);
     elements.dashboardRows.innerHTML = (semiannualDashboard.prevalence || [])
       .map((row) => {
-        const event = incidence[row.period] || {};
         return `
           <tr>
             <td>${escapeHtml(formatPeriod(row.period))}</td>
-            <td>${formatNumber(row.activeChannelsObserved)}</td>
             <td>${escapeHtml(formatPercent(row.currentLikelyNotRateAmongChecked))}</td>
             <td>${escapeHtml(formatSignedPoints(row.previousRateDeltaPoints))}</td>
-            <td>${formatNumber(event.likelyNotInactiveEvents)}</td>
-            <td>${formatNumber(event.missingAdResultInactiveCandidates)}</td>
-            <td>${formatNumber(event.failedAdResultInactiveCandidates)}</td>
-            <td>${formatNumber(event.inconclusiveInactiveCandidates)}</td>
-            <td>${event.eventWindowComplete ? "期間終了" : "途中"}</td>
+            <td>${formatNumber(row.activeChannelsWithAdResult)}</td>
           </tr>
         `;
       })
@@ -456,8 +415,8 @@
     if (!elements.dashboardNote || !semiannualDashboard) return;
     elements.dashboardNote.textContent = [
       `作成基準日: ${semiannualDashboard.asOf || "-"}`,
-      "判定待ちは、まだ追加判定を実行できていない件数です。",
-      "取得失敗は、HTTP 429などで動画ページを取得できなかった件数です。",
+      "公開動画から機械的に推定した暫定値です。",
+      "2026年上半期は期間途中の速報値です。",
     ].join(" / ");
   }
 
@@ -470,7 +429,6 @@
     renderDashboardKpis();
     renderDashboardVerdict();
     renderPrevalenceChart();
-    renderIncidenceChart();
     renderDashboardTable();
     renderDashboardNote();
   }
@@ -485,7 +443,6 @@
     elements.generatedAt.textContent = formatDate(data.summary.generatedAt);
     initSourceMeta();
     initFeedbackLinks();
-    renderDashboardControls();
     renderPeriodDashboard();
     renderSummary();
     renderRows();
@@ -493,9 +450,6 @@
       element.addEventListener("input", renderRows);
       element.addEventListener("change", renderRows);
     });
-    if (elements.dashboardThresholdSelect) {
-      elements.dashboardThresholdSelect.addEventListener("change", renderPeriodDashboard);
-    }
   }
 
   init();

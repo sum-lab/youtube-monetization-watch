@@ -7,7 +7,7 @@
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' https://yt3.ggpht.com https://yt3.googleusercontent.com data:; font-src 'self' data:; connect-src https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'; upgrade-insecure-requests">
     <title>YouTube収益化停止 可能性リスト</title>
-    <link rel="stylesheet" href="assets/styles.css?v=20260427-dashboard9">
+    <link rel="stylesheet" href="assets/styles.css?v=20260427-dashboard10">
   </head>
   <body>
     <header class="site-header">
@@ -59,54 +59,31 @@
         <div class="dashboard-head">
           <div>
             <p class="section-label">増加検証</p>
-            <h2>「収益化停止チャンネル」は増えたのか？</h2>
+            <h2>過去より収益化停止・未収益化は増えたのか？</h2>
             <p class="dashboard-lead">
-              答えはまだ出せません。2026年上半期は、収益化停止・未収益化チャンネルの割合が高めです。
-              ただし、それが本当に増加なのかは、投稿停止後の追加判定をやり切るまで判断できません。
+              2023年以降、各半期に投稿があったチャンネルを同じ基準で比較しています。
             </p>
           </div>
-          <label class="dashboard-control">
-            <span>投稿が止まっている期間</span>
-            <select id="dashboardThresholdSelect" aria-label="投稿停止日数"></select>
-          </label>
         </div>
         <div class="dashboard-verdict" id="dashboardVerdict"></div>
-        <div class="dashboard-glossary" aria-label="判定状態">
-          <p><strong>判定待ち</strong> 投稿が止まった候補について、まだ追加判定を実行できていない状態です。</p>
-          <p><strong>取得失敗</strong> HTTP 429などで動画ページを取得できず、追加判定が完了しなかった状態です。</p>
-        </div>
         <div class="dashboard-kpis" id="dashboardKpis"></div>
-        <div class="dashboard-layout">
-          <article class="dashboard-panel">
-            <div class="panel-head">
-              <h3>収益化停止・未収益化率</h3>
-              <p>その半年に投稿があり、判定済みのチャンネルだけで比較</p>
-            </div>
-            <div class="rate-chart" id="prevalenceChart"></div>
-          </article>
-          <article class="dashboard-panel">
-            <div class="panel-head">
-              <h3>投稿停止後の確認結果</h3>
-              <p>収益化停止・未収益化、判定待ち、取得失敗を分けて表示</p>
-            </div>
-            <div class="range-chart" id="incidenceChart"></div>
-          </article>
-        </div>
+        <article class="dashboard-panel dashboard-panel-wide">
+          <div class="panel-head">
+            <h3>半期別の推移</h3>
+            <p>線が上がるほど、収益化停止・未収益化の割合が高い</p>
+          </div>
+          <div class="rate-chart" id="prevalenceChart"></div>
+        </article>
         <details class="dashboard-details">
-          <summary>詳しい数字を見る</summary>
+          <summary>集計値を見る</summary>
           <div class="dashboard-table-wrap">
             <table class="dashboard-table">
               <thead>
                 <tr>
                   <th>時期</th>
-                  <th>その時期に投稿あり</th>
                   <th>収益化停止・未収益化率</th>
                   <th>前の半期との差</th>
-                  <th>投稿停止後も収益化停止・未収益化</th>
-                  <th>判定待ち</th>
-                  <th>取得失敗</th>
-                  <th>判定保留</th>
-                  <th>状態</th>
+                  <th>判定済みチャンネル</th>
                 </tr>
               </thead>
               <tbody id="dashboardRows"></tbody>
@@ -194,8 +171,8 @@
       </section>
     </main>
 
-    <script src="assets/data.js?v=20260427-dashboard9"></script>
-    <script src="assets/app.js?v=20260427-dashboard9"></script>
+    <script src="assets/data.js?v=20260427-dashboard10"></script>
+    <script src="assets/app.js?v=20260427-dashboard10"></script>
     <!-- Cloudflare Web Analytics -->
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "ef2305f18ca64c5dab2f9a0f2eccdabe"}'></script>
     <!-- End Cloudflare Web Analytics -->
