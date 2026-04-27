@@ -297,8 +297,8 @@
         <strong>追加確認が必要</strong>
       </div>
       <p>
-        ${escapeHtml(formatPeriod(latest.period))}は、広告なし割合が${escapeHtml(formatPercent(latest.currentLikelyNotRateAmongChecked))}でした。
-        ${escapeHtml(thresholdDays)}日以上投稿が止まった候補${escapeHtml(formatNumber(inactiveCandidates))}件のうち、広告なし${escapeHtml(formatNumber(likelyNot))}件、広告確認待ち${escapeHtml(formatNumber(waiting))}件、取得失敗${escapeHtml(formatNumber(failed))}件${escapeHtml(inconclusiveText)}です。
+        ${escapeHtml(formatPeriod(latest.period))}は、収益化停止・未収益化率が${escapeHtml(formatPercent(latest.currentLikelyNotRateAmongChecked))}でした。
+        ${escapeHtml(thresholdDays)}日以上投稿が止まった候補${escapeHtml(formatNumber(inactiveCandidates))}件のうち、収益化停止・未収益化${escapeHtml(formatNumber(likelyNot))}件、判定待ち${escapeHtml(formatNumber(waiting))}件、取得失敗${escapeHtml(formatNumber(failed))}件${escapeHtml(inconclusiveText)}です。
       </p>
     `;
   }
@@ -319,21 +319,21 @@
     const selectedLatest = dashboardIncidenceRows(thresholdDays).find((row) => row.period === latestPeriod) || {};
     const cards = [
       {
-        label: "広告なし割合",
+        label: "収益化停止・未収益化率",
         value: formatPercent(semiannualDashboard.kpis?.latestLikelyNotRate),
         detail: `${formatPeriod(latestPeriod)}。${formatPeriod(previousPeriod)}より${formatSignedPoints(semiannualDashboard.kpis?.latestLikelyNotDeltaPoints)}`,
         tone: "blue",
       },
       {
-        label: "投稿停止後も広告なし",
+        label: "投稿停止後も収益化停止・未収益化",
         value: formatNumber(selectedLatest.likelyNotInactiveEvents),
-        detail: `${thresholdDays}日以上投稿が止まり、広告なし`,
+        detail: `${thresholdDays}日以上投稿が止まり、収益化停止・未収益化`,
         tone: "red",
       },
       {
-        label: "広告確認待ち",
+        label: "判定待ち",
         value: formatNumber(selectedLatest.missingAdResultInactiveCandidates),
-        detail: "まだ広告チェックを実行できていない",
+        detail: "まだ追加判定を実行できていない",
         tone: "gray",
       },
       {
@@ -404,7 +404,7 @@
         const failedWidth = Math.max(0, (failed / maxCount) * 100);
         const inconclusiveWidth = Math.max(0, (inconclusive / maxCount) * 100);
         const summaryParts = [
-          `広告なし ${formatNumber(confirmed)}`,
+          `収益化停止・未収益化 ${formatNumber(confirmed)}`,
           `待ち ${formatNumber(waiting)}`,
           `失敗 ${formatNumber(failed)}`,
         ];
@@ -456,7 +456,7 @@
     if (!elements.dashboardNote || !semiannualDashboard) return;
     elements.dashboardNote.textContent = [
       `作成基準日: ${semiannualDashboard.asOf || "-"}`,
-      "広告確認待ちは、まだ広告チェックを実行できていない件数です。",
+      "判定待ちは、まだ追加判定を実行できていない件数です。",
       "取得失敗は、HTTP 429などで動画ページを取得できなかった件数です。",
     ].join(" / ");
   }
