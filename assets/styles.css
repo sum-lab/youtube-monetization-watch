@@ -760,7 +760,7 @@ h2 {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1090px;
+  min-width: 1180px;
 }
 
 th,
@@ -897,6 +897,37 @@ tbody tr:hover {
   background: var(--green-soft);
   color: var(--green);
   border: 1px solid #9cc7ad;
+}
+
+.persona-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 27px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  font-size: 0.76rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.persona-pill-personal {
+  background: var(--green-soft);
+  color: var(--green);
+  border-color: #9cc7ad;
+}
+
+.persona-pill-non_personal {
+  background: var(--red-soft);
+  color: var(--red-dark);
+  border-color: #d59a9a;
+}
+
+.persona-pill-unknown {
+  background: var(--gray-soft);
+  color: var(--muted);
+  border-color: #c4c0b8;
 }
 
 .method {

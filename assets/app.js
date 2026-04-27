@@ -21,6 +21,7 @@
     summaryGrid: document.getElementById("summaryGrid"),
     searchInput: document.getElementById("searchInput"),
     confidenceFilter: document.getElementById("confidenceFilter"),
+    personaFilter: document.getElementById("personaFilter"),
     sortSelect: document.getElementById("sortSelect"),
     visibleCount: document.getElementById("visibleCount"),
     channelRows: document.getElementById("channelRows"),
@@ -185,8 +186,10 @@
   }
 
   function resultCount(value) {
-    if (value === "all") return channels.length;
-    return channels.reduce((count, channel) => count + (channel.result === value ? 1 : 0), 0);
+    return channels.reduce((count, channel) => {
+      if (value !== "all" && channel.result !== value) return count;
+      return count + (matchesToolbarFilters(channel) ? 1 : 0);
+    }, 0);
   }
 
   function renderResultTabs() {
@@ -211,6 +214,52 @@
     return `<div class="avatar avatar-fallback" aria-hidden="true">${escapeHtml((channel.label || "?").slice(0, 1))}</div>`;
   }
 
+  const personaShortLabels = {
+    personal: "属人",
+    non_personal: "非属人",
+    unknown: "判定不能",
+  };
+
+  const personaConfidenceLabels = {
+    high: "高",
+    medium: "中",
+    low: "低",
+  };
+
+  function personaLabel(channel) {
+    return personaShortLabels[channel.persona || "unknown"] || "判定不能";
+  }
+
+  function personaCellMarkup(channel) {
+    const persona = channel.persona || "unknown";
+    const confidence = personaConfidenceLabels[channel.personaConfidence] || channel.personaConfidence || "-";
+    return `<span class="persona-pill persona-pill-${escapeHtml(persona)}" title="分類信頼度: ${escapeHtml(confidence)}">${escapeHtml(personaLabel(channel))}</span>`;
+  }
+
+  function channelHaystack(channel) {
+    return [
+      channel.label,
+      channel.channelId,
+      channel.discoverySource,
+      channel.resultLabel,
+      channel.confidenceLabel,
+      personaLabel(channel),
+      channel.persona,
+      channel.personaConfidence,
+    ]
+      .join(" ")
+      .toLowerCase();
+  }
+
+  function matchesToolbarFilters(channel) {
+    const query = elements.searchInput.value.trim().toLowerCase();
+    const confidence = elements.confidenceFilter.value;
+    const persona = elements.personaFilter ? elements.personaFilter.value : "all";
+    if (confidence !== "all" && channel.confidence !== confidence) return false;
+    if (persona !== "all" && (channel.persona || "unknown") !== persona) return false;
+    return !query || channelHaystack(channel).includes(query);
+  }
+
   function rowMarkup(channel) {
     return `
       <tr>
@@ -224,6 +273,7 @@
           </div>
         </td>
         <td><span class="pill ${escapeHtml(channel.result)}">${escapeHtml(channel.resultLabel)}</span></td>
+        <td>${personaCellMarkup(channel)}</td>
         <td>${escapeHtml(channel.confidenceLabel)}</td>
         <td>${formatNumber(channel.subscribers)}</td>
         <td>${formatDays(channel.latestUploadDays)}</td>
@@ -235,23 +285,9 @@
   }
 
   function filteredChannels() {
-    const query = elements.searchInput.value.trim().toLowerCase();
-    const confidence = elements.confidenceFilter.value;
-
     return channels.filter((channel) => {
       if (activeResult !== "all" && channel.result !== activeResult) return false;
-      if (confidence !== "all" && channel.confidence !== confidence) return false;
-      if (!query) return true;
-      const haystack = [
-        channel.label,
-        channel.channelId,
-        channel.discoverySource,
-        channel.resultLabel,
-        channel.confidenceLabel,
-      ]
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(query);
+      return matchesToolbarFilters(channel);
     });
   }
 
@@ -271,7 +307,7 @@
     elements.visibleCount.textContent = `${formatNumber(rows.length)} / ${formatNumber(visible.length)} 件表示`;
     elements.channelRows.innerHTML = rows.length
       ? rows.map(rowMarkup).join("")
-      : `<tr><td class="no-results" colspan="8">該当するチャンネルはありません</td></tr>`;
+      : `<tr><td class="no-results" colspan="9">該当するチャンネルはありません</td></tr>`;
     if (elements.loadMoreButton) {
       const remaining = Math.max(0, visible.length - rows.length);
       elements.loadMoreButton.hidden = remaining === 0;
@@ -511,14 +547,16 @@
     renderSummary();
     renderResultTabs();
     renderRows();
-    [elements.searchInput, elements.confidenceFilter, elements.sortSelect].forEach((element) => {
+    [elements.searchInput, elements.confidenceFilter, elements.personaFilter, elements.sortSelect].forEach((element) => {
       if (!element) return;
       element.addEventListener("input", () => {
         visibleLimit = listPageSize;
+        renderResultTabs();
         renderRows();
       });
       element.addEventListener("change", () => {
         visibleLimit = listPageSize;
+        renderResultTabs();
         renderRows();
       });
     });

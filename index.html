@@ -7,7 +7,7 @@
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' https://yt3.ggpht.com https://yt3.googleusercontent.com data:; font-src 'self' data:; connect-src https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'; upgrade-insecure-requests">
     <title>YouTube収益化停止 可能性リスト</title>
-    <link rel="stylesheet" href="assets/styles.css?v=20260427-dashboard12">
+    <link rel="stylesheet" href="assets/styles.css?v=20260427-persona1">
   </head>
   <body>
     <header class="site-header">
@@ -96,7 +96,7 @@
       <section class="toolbar" aria-label="絞り込み">
         <label class="search-box">
           <span>検索</span>
-          <input id="searchInput" type="search" placeholder="チャンネル名・ID・発見元">
+          <input id="searchInput" type="search" placeholder="チャンネル名・ID・発見元・種別">
         </label>
         <label>
           <span>信頼度</span>
@@ -105,6 +105,15 @@
             <option value="high">高</option>
             <option value="medium">中</option>
             <option value="low">低</option>
+          </select>
+        </label>
+        <label>
+          <span>チャンネル種別</span>
+          <select id="personaFilter">
+            <option value="all">すべて</option>
+            <option value="personal">属人</option>
+            <option value="non_personal">非属人</option>
+            <option value="unknown">判定不能</option>
           </select>
         </label>
         <label>
@@ -133,6 +142,7 @@
               <tr>
                 <th>チャンネル</th>
                 <th>判定</th>
+                <th>種別</th>
                 <th>信頼度</th>
                 <th>登録者数</th>
                 <th>最新投稿</th>
@@ -165,8 +175,8 @@
       </section>
     </main>
 
-    <script src="assets/data.js?v=20260427-dashboard12"></script>
-    <script src="assets/app.js?v=20260427-dashboard12"></script>
+    <script src="assets/data.js?v=20260427-persona1"></script>
+    <script src="assets/app.js?v=20260427-persona1"></script>
     <!-- Cloudflare Web Analytics -->
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "ef2305f18ca64c5dab2f9a0f2eccdabe"}'></script>
     <!-- End Cloudflare Web Analytics -->
