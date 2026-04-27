@@ -4,6 +4,10 @@
   const labels = (data.summary && data.summary.labels) || {};
   const semiannualDashboard = data.semiannualDashboard || null;
   const issueBaseUrl = "https://github.com/sum-lab/youtube-monetization-watch/issues/new";
+  const listPageSize = 100;
+
+  let activeResult = "likely_not_monetized";
+  let visibleLimit = listPageSize;
 
   const resultWeight = {
     likely_not_monetized: 0,
@@ -16,11 +20,12 @@
     generatedAt: document.getElementById("generatedAt"),
     summaryGrid: document.getElementById("summaryGrid"),
     searchInput: document.getElementById("searchInput"),
-    resultFilter: document.getElementById("resultFilter"),
     confidenceFilter: document.getElementById("confidenceFilter"),
     sortSelect: document.getElementById("sortSelect"),
     visibleCount: document.getElementById("visibleCount"),
     channelRows: document.getElementById("channelRows"),
+    resultTabs: document.getElementById("resultTabs"),
+    loadMoreButton: document.getElementById("loadMoreButton"),
     globalFeedbackLink: document.getElementById("globalFeedbackLink"),
     feedbackPanelLink: document.getElementById("feedbackPanelLink"),
     sourceMetaTotal: document.getElementById("sourceMetaTotal"),
@@ -169,6 +174,36 @@
       .join("");
   }
 
+  function resultTabItems() {
+    return [
+      ["likely_not_monetized", "収益化停止・未収益化"],
+      ["inconclusive", labels.inconclusive || "判定保留"],
+      ["failed", labels.failed || "取得失敗"],
+      ["likely_monetized", "収益化中"],
+      ["all", "すべて"],
+    ];
+  }
+
+  function resultCount(value) {
+    if (value === "all") return channels.length;
+    return channels.reduce((count, channel) => count + (channel.result === value ? 1 : 0), 0);
+  }
+
+  function renderResultTabs() {
+    if (!elements.resultTabs) return;
+    elements.resultTabs.innerHTML = resultTabItems()
+      .map(([value, label]) => {
+        const active = value === activeResult;
+        return `
+          <button class="result-tab ${active ? "is-active" : ""}" type="button" data-result="${escapeHtml(value)}" aria-pressed="${active ? "true" : "false"}">
+            <span>${escapeHtml(label)}</span>
+            <strong>${formatNumber(resultCount(value))}</strong>
+          </button>
+        `;
+      })
+      .join("");
+  }
+
   function avatarMarkup(channel) {
     if (channel.iconUrl) {
       return `<img class="avatar" src="${escapeHtml(channel.iconUrl)}" loading="lazy" referrerpolicy="no-referrer" alt="">`;
@@ -201,11 +236,10 @@
 
   function filteredChannels() {
     const query = elements.searchInput.value.trim().toLowerCase();
-    const result = elements.resultFilter.value;
     const confidence = elements.confidenceFilter.value;
 
     return channels.filter((channel) => {
-      if (result !== "all" && channel.result !== result) return false;
+      if (activeResult !== "all" && channel.result !== activeResult) return false;
       if (confidence !== "all" && channel.confidence !== confidence) return false;
       if (!query) return true;
       const haystack = [
@@ -233,8 +267,16 @@
 
   function renderRows() {
     const visible = sortChannels(filteredChannels());
-    elements.visibleCount.textContent = `${formatNumber(visible.length)} / ${formatNumber(channels.length)} 件`;
-    elements.channelRows.innerHTML = visible.map(rowMarkup).join("");
+    const rows = visible.slice(0, visibleLimit);
+    elements.visibleCount.textContent = `${formatNumber(rows.length)} / ${formatNumber(visible.length)} 件表示`;
+    elements.channelRows.innerHTML = rows.length
+      ? rows.map(rowMarkup).join("")
+      : `<tr><td class="no-results" colspan="8">該当するチャンネルはありません</td></tr>`;
+    if (elements.loadMoreButton) {
+      const remaining = Math.max(0, visible.length - rows.length);
+      elements.loadMoreButton.hidden = remaining === 0;
+      elements.loadMoreButton.textContent = `さらに表示（残り${formatNumber(remaining)}件）`;
+    }
   }
 
   function initSourceMeta() {
@@ -467,11 +509,35 @@
     initFeedbackLinks();
     renderPeriodDashboard();
     renderSummary();
+    renderResultTabs();
     renderRows();
-    [elements.searchInput, elements.resultFilter, elements.confidenceFilter, elements.sortSelect].forEach((element) => {
-      element.addEventListener("input", renderRows);
-      element.addEventListener("change", renderRows);
+    [elements.searchInput, elements.confidenceFilter, elements.sortSelect].forEach((element) => {
+      if (!element) return;
+      element.addEventListener("input", () => {
+        visibleLimit = listPageSize;
+        renderRows();
+      });
+      element.addEventListener("change", () => {
+        visibleLimit = listPageSize;
+        renderRows();
+      });
     });
+    if (elements.resultTabs) {
+      elements.resultTabs.addEventListener("click", (event) => {
+        const button = event.target && event.target.closest ? event.target.closest("button[data-result]") : null;
+        if (!button) return;
+        activeResult = button.dataset.result || "likely_not_monetized";
+        visibleLimit = listPageSize;
+        renderResultTabs();
+        renderRows();
+      });
+    }
+    if (elements.loadMoreButton) {
+      elements.loadMoreButton.addEventListener("click", () => {
+        visibleLimit += listPageSize;
+        renderRows();
+      });
+    }
   }
 
   init();
