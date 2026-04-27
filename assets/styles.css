@@ -414,6 +414,10 @@ main {
   margin-bottom: 14px;
 }
 
+.persona-prevalence-panel {
+  margin-top: 16px;
+}
+
 .panel-head {
   display: flex;
   justify-content: space-between;
@@ -571,6 +575,115 @@ main {
 .dashboard-average-value {
   fill: #4d4d4d;
   font-weight: 900;
+}
+
+.persona-prevalence-summary {
+  margin-bottom: 14px;
+}
+
+.persona-prevalence-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.persona-prevalence-card {
+  border: 1px solid #d8d8df;
+  border-top: 4px solid #767676;
+  border-radius: 4px;
+  background: #fff;
+  padding: 12px 14px;
+}
+
+.persona-prevalence-card-personal {
+  border-top-color: var(--green);
+}
+
+.persona-prevalence-card-non_personal {
+  border-top-color: var(--red);
+}
+
+.persona-prevalence-card span,
+.persona-prevalence-card em,
+.persona-prevalence-card small {
+  display: block;
+}
+
+.persona-prevalence-card span {
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.persona-prevalence-card strong {
+  display: block;
+  margin: 4px 0;
+  font-family: Arial, "Yu Gothic", sans-serif;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.persona-prevalence-card-personal strong {
+  color: var(--green);
+}
+
+.persona-prevalence-card-non_personal strong {
+  color: var(--red-dark);
+}
+
+.persona-prevalence-card em,
+.persona-prevalence-card small,
+.persona-prevalence-summary p {
+  color: #626264;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.persona-prevalence-summary p {
+  margin: 0;
+  line-height: 1.7;
+}
+
+.persona-line {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.persona-line-personal {
+  stroke: var(--green);
+}
+
+.persona-line-non_personal {
+  stroke: var(--red);
+}
+
+.persona-dot-personal {
+  fill: #fff;
+  stroke: var(--green);
+  stroke-width: 3;
+}
+
+.persona-dot-non_personal {
+  fill: #fff;
+  stroke: var(--red);
+  stroke-width: 3;
+}
+
+.persona-chart-label {
+  font-family: Arial, "Yu Gothic", sans-serif;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.persona-chart-label-personal {
+  fill: var(--green);
+}
+
+.persona-chart-label-non_personal {
+  fill: var(--red-dark);
 }
 
 .dashboard-chart-legend {
@@ -968,6 +1081,10 @@ tbody tr:hover {
 
   .dashboard-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .persona-prevalence-cards {
+    grid-template-columns: 1fr;
   }
 }
 

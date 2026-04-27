@@ -7,7 +7,7 @@
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' https://yt3.ggpht.com https://yt3.googleusercontent.com data:; font-src 'self' data:; connect-src https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'; upgrade-insecure-requests">
     <title>YouTube収益化停止 可能性リスト</title>
-    <link rel="stylesheet" href="assets/styles.css?v=20260427-persona1">
+    <link rel="stylesheet" href="assets/styles.css?v=20260427-persona2">
   </head>
   <body>
     <header class="site-header">
@@ -87,6 +87,30 @@
                 </tr>
               </thead>
               <tbody id="dashboardRows"></tbody>
+            </table>
+          </div>
+        </details>
+        <article class="dashboard-panel dashboard-panel-wide persona-prevalence-panel">
+          <div class="panel-head">
+            <h3>属人 / 非属人別の推移</h3>
+            <p>同じ集計方法でチャンネル種別ごとに分けた比較</p>
+          </div>
+          <div class="persona-prevalence-summary" id="personaPrevalenceSummary"></div>
+          <div class="rate-chart" id="personaPrevalenceChart"></div>
+        </article>
+        <details class="dashboard-details">
+          <summary>属人 / 非属人別の集計値を見る</summary>
+          <div class="dashboard-table-wrap">
+            <table class="dashboard-table persona-prevalence-table">
+              <thead>
+                <tr>
+                  <th>時期</th>
+                  <th>属人</th>
+                  <th>非属人</th>
+                  <th>差</th>
+                </tr>
+              </thead>
+              <tbody id="personaPrevalenceRows"></tbody>
             </table>
           </div>
         </details>
@@ -175,8 +199,8 @@
       </section>
     </main>
 
-    <script src="assets/data.js?v=20260427-persona1"></script>
-    <script src="assets/app.js?v=20260427-persona1"></script>
+    <script src="assets/data.js?v=20260427-persona2"></script>
+    <script src="assets/app.js?v=20260427-persona2"></script>
     <!-- Cloudflare Web Analytics -->
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "ef2305f18ca64c5dab2f9a0f2eccdabe"}'></script>
     <!-- End Cloudflare Web Analytics -->

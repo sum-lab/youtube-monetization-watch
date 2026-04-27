@@ -36,6 +36,9 @@
     dashboardKpis: document.getElementById("dashboardKpis"),
     prevalenceChart: document.getElementById("prevalenceChart"),
     dashboardRows: document.getElementById("dashboardRows"),
+    personaPrevalenceSummary: document.getElementById("personaPrevalenceSummary"),
+    personaPrevalenceChart: document.getElementById("personaPrevalenceChart"),
+    personaPrevalenceRows: document.getElementById("personaPrevalenceRows"),
     dashboardNote: document.getElementById("dashboardNote"),
   };
 
@@ -348,6 +351,43 @@
     return `${Math.abs(Number(value) * 100).toFixed(1)}ポイント`;
   }
 
+  const personaComparisonItems = [
+    { key: "personal", label: "属人" },
+    { key: "non_personal", label: "非属人" },
+  ];
+
+  function personaSegment(row, key) {
+    return (row && row.segments && row.segments[key]) || {};
+  }
+
+  function weightedPersonaRate(rows, key) {
+    const totals = rows.reduce(
+      (acc, row) => {
+        const segment = personaSegment(row, key);
+        acc.numerator += Number(segment.currentLikelyNotActiveChannels || 0);
+        acc.denominator += Number(segment.activeChannelsWithAdResult || 0);
+        return acc;
+      },
+      { numerator: 0, denominator: 0 }
+    );
+    return totals.denominator > 0 ? totals.numerator / totals.denominator : null;
+  }
+
+  function personaRate(segment) {
+    return segment.currentLikelyNotRateAmongChecked === null || segment.currentLikelyNotRateAmongChecked === undefined
+      ? null
+      : Number(segment.currentLikelyNotRateAmongChecked);
+  }
+
+  function personaFraction(segment) {
+    return `${formatNumber(segment.currentLikelyNotActiveChannels || 0)} / ${formatNumber(segment.activeChannelsWithAdResult || 0)}`;
+  }
+
+  function personaRateWithFraction(segment) {
+    const rate = personaRate(segment);
+    return rate === null ? "-" : `${formatPercent(rate)}（${personaFraction(segment)}）`;
+  }
+
   function renderDashboardVerdict() {
     if (!elements.dashboardVerdict || !semiannualDashboard) return;
     const rows = semiannualDashboard.prevalence || [];
@@ -495,6 +535,165 @@
     `;
   }
 
+  function renderPersonaPrevalenceSummary() {
+    if (!elements.personaPrevalenceSummary || !semiannualDashboard) return;
+    const rows = semiannualDashboard.personaPrevalence || [];
+    if (!rows.length) {
+      elements.personaPrevalenceSummary.hidden = true;
+      return;
+    }
+    const latest = rows[rows.length - 1] || {};
+    const pastRows = rows.slice(0, -1);
+    const personal = personaSegment(latest, "personal");
+    const nonPersonal = personaSegment(latest, "non_personal");
+    const personalPastRate = weightedPersonaRate(pastRows, "personal");
+    const nonPersonalPastRate = weightedPersonaRate(pastRows, "non_personal");
+    const personalDelta = personaRate(personal) === null || personalPastRate === null ? null : personaRate(personal) - personalPastRate;
+    const nonPersonalDelta =
+      personaRate(nonPersonal) === null || nonPersonalPastRate === null ? null : personaRate(nonPersonal) - nonPersonalPastRate;
+    const gap =
+      personaRate(nonPersonal) === null || personaRate(personal) === null
+        ? null
+        : personaRate(nonPersonal) - personaRate(personal);
+    const cards = [
+      {
+        key: "personal",
+        label: "属人",
+        value: formatPercent(personaRate(personal)),
+        fraction: personaFraction(personal),
+        delta: formatSignedPoints(personalDelta),
+      },
+      {
+        key: "non_personal",
+        label: "非属人",
+        value: formatPercent(personaRate(nonPersonal)),
+        fraction: personaFraction(nonPersonal),
+        delta: formatSignedPoints(nonPersonalDelta),
+      },
+    ];
+    elements.personaPrevalenceSummary.hidden = false;
+    elements.personaPrevalenceSummary.innerHTML = `
+      <div class="persona-prevalence-cards">
+        ${cards
+          .map(
+            (card) => `
+              <article class="persona-prevalence-card persona-prevalence-card-${escapeHtml(card.key)}">
+                <span>${escapeHtml(card.label)}</span>
+                <strong>${escapeHtml(card.value)}</strong>
+                <em>${escapeHtml(formatPeriod(latest.period))} / ${escapeHtml(card.fraction)}</em>
+                <small>2023〜2025年平均との差 ${escapeHtml(card.delta)}</small>
+              </article>
+            `
+          )
+          .join("")}
+      </div>
+      <p>
+        ${escapeHtml(formatPeriod(latest.period))}は、非属人が属人より${escapeHtml(formatAbsPoints(gap))}高い状態です。
+        全体の変化を見るための補助線として、チャンネル種別別にも確認しています。
+      </p>
+    `;
+  }
+
+  function renderPersonaPrevalenceChart() {
+    if (!elements.personaPrevalenceChart || !semiannualDashboard) return;
+    const rows = semiannualDashboard.personaPrevalence || [];
+    if (!rows.length) return;
+    const width = 900;
+    const height = 390;
+    const margin = { top: 58, right: 140, bottom: 86, left: 76 };
+    const chartWidth = width - margin.left - margin.right;
+    const chartHeight = height - margin.top - margin.bottom;
+    const values = rows.flatMap((row) =>
+      personaComparisonItems.map((item) => personaRate(personaSegment(row, item.key))).filter((value) => value !== null)
+    );
+    const observedMax = values.length ? Math.max(...values) : 0;
+    const maxRate = Math.max(0.25, Math.ceil(observedMax * 20) / 20);
+    const x = (index) => margin.left + (rows.length === 1 ? chartWidth / 2 : (chartWidth * index) / (rows.length - 1));
+    const y = (rate) => margin.top + chartHeight - (Number(rate || 0) / maxRate) * chartHeight;
+    const tickCount = Math.round(maxRate / 0.05);
+    const ticks = Array.from({ length: tickCount + 1 }, (_, index) => index * 0.05);
+    const grid = ticks
+      .map((tick) => {
+        const ty = y(tick);
+        return `
+          <line class="dashboard-chart-grid" x1="${margin.left}" y1="${ty.toFixed(1)}" x2="${width - margin.right}" y2="${ty.toFixed(1)}"></line>
+          <text class="dashboard-chart-y" x="${margin.left - 10}" y="${(ty + 4).toFixed(1)}" text-anchor="end">${escapeHtml(formatPercent(tick, 0))}</text>
+        `;
+      })
+      .join("");
+    const series = personaComparisonItems
+      .map((item) => {
+        const points = rows
+          .map((row, index) => `${x(index).toFixed(1)},${y(personaRate(personaSegment(row, item.key))).toFixed(1)}`)
+          .join(" ");
+        const dots = rows
+          .map((row, index) => {
+            const segment = personaSegment(row, item.key);
+            const cx = x(index);
+            const cy = y(personaRate(segment));
+            return `
+              <circle class="persona-dot persona-dot-${escapeHtml(item.key)}" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="4">
+                <title>${escapeHtml(item.label)} ${escapeHtml(formatPeriod(row.period))}: ${escapeHtml(personaRateWithFraction(segment))}</title>
+              </circle>
+            `;
+          })
+          .join("");
+        return `
+          <polyline class="persona-line persona-line-${escapeHtml(item.key)}" points="${points}"></polyline>
+          ${dots}
+        `;
+      })
+      .join("");
+    const latest = rows[rows.length - 1] || {};
+    const latestLabels = personaComparisonItems
+      .map((item, index) => {
+        const segment = personaSegment(latest, item.key);
+        const rate = personaRate(segment);
+        return `
+          <text class="persona-chart-label persona-chart-label-${escapeHtml(item.key)}" x="${width - margin.right + 18}" y="${(y(rate) + 4 + index * 4).toFixed(1)}">
+            ${escapeHtml(item.label)} ${escapeHtml(formatPercent(rate))}
+          </text>
+        `;
+      })
+      .join("");
+    const legend = personaComparisonItems
+      .map(
+        (item, index) => `
+          <g transform="translate(${margin.left + index * 94}, 34)">
+            <line class="persona-line persona-line-${escapeHtml(item.key)}" x1="0" y1="0" x2="26" y2="0"></line>
+            <text class="dashboard-chart-axis-title" x="34" y="4">${escapeHtml(item.label)}</text>
+          </g>
+        `
+      )
+      .join("");
+    const markers = rows
+      .map((row, index) => {
+        const parts = formatPeriodTickParts(row.period);
+        const cx = x(index);
+        return `
+          <text class="dashboard-chart-x" x="${cx.toFixed(1)}" y="${height - 54}" text-anchor="middle">
+            <tspan x="${cx.toFixed(1)}">${escapeHtml(parts.year)}</tspan>
+            <tspan x="${cx.toFixed(1)}" dy="15">${escapeHtml(parts.half)}</tspan>
+          </text>
+        `;
+      })
+      .join("");
+    elements.personaPrevalenceChart.innerHTML = `
+      <svg class="dashboard-line-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="属人と非属人の半期別推移">
+        <title>属人と非属人の半期別推移</title>
+        <text class="dashboard-chart-axis-title" x="${margin.left}" y="22">収益化停止・未収益化率（%）</text>
+        ${legend}
+        ${grid}
+        <line class="dashboard-chart-axis" x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}"></line>
+        <line class="dashboard-chart-axis" x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${height - margin.bottom}"></line>
+        ${series}
+        ${latestLabels}
+        ${markers}
+        <text class="dashboard-chart-axis-title" x="${(margin.left + chartWidth / 2).toFixed(1)}" y="${height - 10}" text-anchor="middle">投稿があった時期（半期）</text>
+      </svg>
+    `;
+  }
+
   function renderDashboardTable() {
     if (!elements.dashboardRows || !semiannualDashboard) return;
     elements.dashboardRows.innerHTML = (semiannualDashboard.prevalence || [])
@@ -505,6 +704,28 @@
             <td>${escapeHtml(formatPercent(row.currentLikelyNotRateAmongChecked))}</td>
             <td>${escapeHtml(formatSignedPoints(row.previousRateDeltaPoints))}</td>
             <td>${formatNumber(row.activeChannelsWithAdResult)}</td>
+          </tr>
+        `;
+      })
+      .join("");
+  }
+
+  function renderPersonaPrevalenceTable() {
+    if (!elements.personaPrevalenceRows || !semiannualDashboard) return;
+    elements.personaPrevalenceRows.innerHTML = (semiannualDashboard.personaPrevalence || [])
+      .map((row) => {
+        const personal = personaSegment(row, "personal");
+        const nonPersonal = personaSegment(row, "non_personal");
+        const gap =
+          personaRate(nonPersonal) === null || personaRate(personal) === null
+            ? null
+            : personaRate(nonPersonal) - personaRate(personal);
+        return `
+          <tr>
+            <td>${escapeHtml(formatPeriod(row.period))}</td>
+            <td>${escapeHtml(personaRateWithFraction(personal))}</td>
+            <td>${escapeHtml(personaRateWithFraction(nonPersonal))}</td>
+            <td>${escapeHtml(formatSignedPoints(gap))}</td>
           </tr>
         `;
       })
@@ -530,6 +751,9 @@
     renderDashboardVerdict();
     renderPrevalenceChart();
     renderDashboardTable();
+    renderPersonaPrevalenceSummary();
+    renderPersonaPrevalenceChart();
+    renderPersonaPrevalenceTable();
     renderDashboardNote();
   }
 
