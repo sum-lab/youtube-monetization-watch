@@ -22,11 +22,17 @@
     searchInput: document.getElementById("searchInput"),
     confidenceFilter: document.getElementById("confidenceFilter"),
     personaFilter: document.getElementById("personaFilter"),
+    sourceFilter: document.getElementById("sourceFilter"),
     sortSelect: document.getElementById("sortSelect"),
     visibleCount: document.getElementById("visibleCount"),
     channelRows: document.getElementById("channelRows"),
     resultTabs: document.getElementById("resultTabs"),
     loadMoreButton: document.getElementById("loadMoreButton"),
+    personaKpiGrid: document.getElementById("personaKpiGrid"),
+    personaStoppedRateChart: document.getElementById("personaStoppedRateChart"),
+    personaStackChart: document.getElementById("personaStackChart"),
+    personaStackLegend: document.getElementById("personaStackLegend"),
+    personaCrossTable: document.getElementById("personaCrossTable"),
     globalFeedbackLink: document.getElementById("globalFeedbackLink"),
     feedbackPanelLink: document.getElementById("feedbackPanelLink"),
     sourceMetaTotal: document.getElementById("sourceMetaTotal"),
@@ -189,10 +195,8 @@
   }
 
   function resultCount(value) {
-    return channels.reduce((count, channel) => {
-      if (value !== "all" && channel.result !== value) return count;
-      return count + (matchesToolbarFilters(channel) ? 1 : 0);
-    }, 0);
+    if (value === "all") return channels.length;
+    return channels.reduce((count, channel) => count + (channel.result === value ? 1 : 0), 0);
   }
 
   function renderResultTabs() {
@@ -220,47 +224,13 @@
   const personaShortLabels = {
     personal: "属人",
     non_personal: "非属人",
-    unknown: "判定不能",
+    unknown: "不明",
   };
-
-  const personaConfidenceLabels = {
-    high: "高",
-    medium: "中",
-    low: "低",
-  };
-
-  function personaLabel(channel) {
-    return personaShortLabels[channel.persona || "unknown"] || "判定不能";
-  }
 
   function personaCellMarkup(channel) {
-    const persona = channel.persona || "unknown";
-    const confidence = personaConfidenceLabels[channel.personaConfidence] || channel.personaConfidence || "-";
-    return `<span class="persona-pill persona-pill-${escapeHtml(persona)}" title="分類信頼度: ${escapeHtml(confidence)}">${escapeHtml(personaLabel(channel))}</span>`;
-  }
-
-  function channelHaystack(channel) {
-    return [
-      channel.label,
-      channel.channelId,
-      channel.discoverySource,
-      channel.resultLabel,
-      channel.confidenceLabel,
-      personaLabel(channel),
-      channel.persona,
-      channel.personaConfidence,
-    ]
-      .join(" ")
-      .toLowerCase();
-  }
-
-  function matchesToolbarFilters(channel) {
-    const query = elements.searchInput.value.trim().toLowerCase();
-    const confidence = elements.confidenceFilter.value;
-    const persona = elements.personaFilter ? elements.personaFilter.value : "all";
-    if (confidence !== "all" && channel.confidence !== confidence) return false;
-    if (persona !== "all" && (channel.persona || "unknown") !== persona) return false;
-    return !query || channelHaystack(channel).includes(query);
+    const p = channel.persona || "unknown";
+    const label = channel.personaDisplayLabel || personaShortLabels[p] || "-";
+    return `<span class="persona-pill persona-pill-${escapeHtml(p)}">${escapeHtml(label)}</span>`;
   }
 
   function rowMarkup(channel) {
@@ -288,9 +258,27 @@
   }
 
   function filteredChannels() {
+    const query = elements.searchInput.value.trim().toLowerCase();
+    const confidence = elements.confidenceFilter.value;
+    const persona = elements.personaFilter ? elements.personaFilter.value : "all";
+    const source = elements.sourceFilter ? elements.sourceFilter.value : "all";
+
     return channels.filter((channel) => {
       if (activeResult !== "all" && channel.result !== activeResult) return false;
-      return matchesToolbarFilters(channel);
+      if (confidence !== "all" && channel.confidence !== confidence) return false;
+      if (persona !== "all" && (channel.persona || "unknown") !== persona) return false;
+      if (source !== "all" && (channel.discoverySource || "") !== source) return false;
+      if (!query) return true;
+      const haystack = [
+        channel.label,
+        channel.channelId,
+        channel.discoverySource,
+        channel.resultLabel,
+        channel.confidenceLabel,
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(query);
     });
   }
 
@@ -763,24 +751,194 @@
     if (elements.feedbackPanelLink) elements.feedbackPanelLink.href = url;
   }
 
+  const PERSONA_KEYS = ["personal", "non_personal", "unknown"];
+  const RESULT_KEYS = ["likely_monetized", "likely_not_monetized", "inconclusive", "failed"];
+  const RESULT_SHORT = {
+    likely_monetized: "収益化中",
+    likely_not_monetized: "停止/未収益化",
+    inconclusive: "判定保留",
+    failed: "取得失敗",
+  };
+
+  function selectPersonaFilter(value) {
+    if (!elements.personaFilter) return;
+    elements.personaFilter.value = value;
+    renderRows();
+    if (elements.personaFilter.scrollIntoView) {
+      elements.personaFilter.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+
+  function renderPersonaKpis(counts, cross, labels) {
+    if (!elements.personaKpiGrid) return;
+    const total = PERSONA_KEYS.reduce((s, k) => s + (counts[k] || 0), 0) || 1;
+    const html = PERSONA_KEYS.map((key) => {
+      const count = counts[key] || 0;
+      const stopped = (cross[key] || {}).likely_not_monetized || 0;
+      const monetized = (cross[key] || {}).likely_monetized || 0;
+      const stoppedRate = count > 0 ? stopped / count : 0;
+      const share = count / total;
+      const label = labels[key] || key;
+      return `
+        <button type="button" class="persona-kpi persona-kpi-${escapeHtml(key)}" data-persona="${escapeHtml(key)}" aria-label="${escapeHtml(label)} ${formatNumber(count)}件、停止率${(stoppedRate*100).toFixed(1)}%">
+          <span class="persona-kpi-label">${escapeHtml(label)}</span>
+          <strong class="persona-kpi-count">${formatNumber(count)}</strong>
+          <span class="persona-kpi-share">全体の${(share*100).toFixed(1)}%</span>
+          <div class="persona-kpi-rate">
+            <span class="persona-kpi-rate-label">停止/未収益化</span>
+            <strong class="persona-kpi-rate-value">${(stoppedRate*100).toFixed(1)}%</strong>
+            <em class="persona-kpi-rate-detail">${formatNumber(stopped)} / ${formatNumber(count)}</em>
+          </div>
+          <div class="persona-kpi-mini">
+            <span class="persona-kpi-mini-monetized" style="width:${(monetized/Math.max(1,count)*100).toFixed(2)}%"></span>
+            <span class="persona-kpi-mini-stopped" style="width:${(stoppedRate*100).toFixed(2)}%"></span>
+          </div>
+        </button>
+      `;
+    }).join("");
+    elements.personaKpiGrid.innerHTML = html;
+    elements.personaKpiGrid.querySelectorAll(".persona-kpi").forEach((btn) => {
+      btn.addEventListener("click", () => selectPersonaFilter(btn.dataset.persona));
+    });
+  }
+
+  function renderPersonaStoppedRateChart(counts, cross, labels) {
+    if (!elements.personaStoppedRateChart) return;
+    const rates = PERSONA_KEYS.map((key) => {
+      const count = counts[key] || 0;
+      const stopped = (cross[key] || {}).likely_not_monetized || 0;
+      return { key, label: labels[key] || key, count, stopped, rate: count > 0 ? stopped / count : 0 };
+    });
+    const maxRate = Math.max(...rates.map((r) => r.rate), 0.01);
+    elements.personaStoppedRateChart.innerHTML = rates.map((r) => `
+      <div class="persona-bar-row" data-persona="${escapeHtml(r.key)}" role="button" tabindex="0">
+        <div class="persona-bar-label">
+          <span class="persona-bar-label-name">${escapeHtml(r.label)}</span>
+          <span class="persona-bar-label-detail">${formatNumber(r.stopped)} / ${formatNumber(r.count)}</span>
+        </div>
+        <div class="persona-bar-track">
+          <div class="persona-bar-fill persona-bar-fill-${escapeHtml(r.key)}" style="width:${(r.rate / maxRate * 100).toFixed(2)}%"></div>
+        </div>
+        <div class="persona-bar-value">${(r.rate * 100).toFixed(1)}%</div>
+      </div>
+    `).join("");
+    elements.personaStoppedRateChart.querySelectorAll(".persona-bar-row").forEach((row) => {
+      row.addEventListener("click", () => selectPersonaFilter(row.dataset.persona));
+      row.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectPersonaFilter(row.dataset.persona); }
+      });
+    });
+  }
+
+  function renderPersonaStackChart(cross, labels) {
+    if (!elements.personaStackChart) return;
+    const STACK_COLORS = {
+      likely_monetized: "#14613e",
+      likely_not_monetized: "#b0181b",
+      inconclusive: "#c69214",
+      failed: "#686057",
+    };
+    const html = PERSONA_KEYS.map((key) => {
+      const row = cross[key] || {};
+      const total = RESULT_KEYS.reduce((s, c) => s + (row[c] || 0), 0);
+      if (!total) return "";
+      let cumX = 0;
+      const rects = [];
+      const labelEls = [];
+      RESULT_KEYS.forEach((c) => {
+        const count = row[c] || 0;
+        if (count <= 0) return;
+        const pct = (count / total) * 1000;
+        const x = cumX;
+        cumX += pct;
+        rects.push(`<rect fill="${STACK_COLORS[c]}" x="${x.toFixed(3)}" y="0" width="${pct.toFixed(3)}" height="22"><title>${escapeHtml(RESULT_SHORT[c])}: ${formatNumber(count)} (${(pct/10).toFixed(1)}%)</title></rect>`);
+        if (pct >= 60) {
+          labelEls.push(`<text x="${(x + pct/2).toFixed(3)}" y="15" text-anchor="middle" fill="#fff" font-size="9" font-weight="800" font-family="Arial,sans-serif">${(pct/10).toFixed(0)}%</text>`);
+        }
+      });
+      return `
+        <div class="persona-stack-row" data-persona="${escapeHtml(key)}" role="button" tabindex="0">
+          <div class="persona-stack-label">${escapeHtml(labels[key] || key)} <small>(${formatNumber(total)})</small></div>
+          <svg class="persona-stack-bar" viewBox="0 0 1000 22" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeHtml(labels[key] || key)}の判定内訳"><rect fill="#f1ede2" x="0" y="0" width="1000" height="22"/>${rects.join("")}${labelEls.join("")}</svg>
+        </div>
+      `;
+    }).join("");
+    elements.personaStackChart.innerHTML = html;
+    elements.personaStackChart.querySelectorAll(".persona-stack-row").forEach((row) => {
+      row.addEventListener("click", () => selectPersonaFilter(row.dataset.persona));
+      row.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectPersonaFilter(row.dataset.persona); }
+      });
+    });
+    if (elements.personaStackLegend) {
+      elements.personaStackLegend.innerHTML = RESULT_KEYS.map((c) => `
+        <span class="persona-stack-legend-item">
+          <i class="persona-stack-legend-swatch persona-stack-segment-${escapeHtml(c)}"></i>
+          ${escapeHtml(RESULT_SHORT[c])}
+        </span>
+      `).join("");
+    }
+  }
+
+  function renderPersonaCrossTable(cross, labels) {
+    if (!elements.personaCrossTable) return;
+    const tbody = elements.personaCrossTable.querySelector("tbody");
+    tbody.innerHTML = PERSONA_KEYS.map((key) => {
+      const row = cross[key] || {};
+      const total = RESULT_KEYS.reduce((sum, c) => sum + (row[c] || 0), 0);
+      const cells = RESULT_KEYS.map((c) => `<td>${formatNumber(row[c] || 0)}</td>`).join("");
+      return `
+        <tr class="persona-row-${escapeHtml(key)}">
+          <th>${escapeHtml(labels[key] || key)}</th>
+          ${cells}
+          <td><strong>${formatNumber(total)}</strong></td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function renderPersonaStats() {
+    if (!data.summary.personaCounts) return;
+    const counts = data.summary.personaCounts || {};
+    const cross = data.summary.personaCross || {};
+    const labels = data.summary.personaLabels || { personal: "属人", non_personal: "非属人", unknown: "判定不能" };
+    renderPersonaKpis(counts, cross, labels);
+    renderPersonaStoppedRateChart(counts, cross, labels);
+    renderPersonaStackChart(cross, labels);
+    renderPersonaCrossTable(cross, labels);
+  }
+
+  function populateSourceFilter() {
+    if (!elements.sourceFilter) return;
+    const counts = {};
+    channels.forEach((c) => {
+      const s = c.discoverySource || "(未設定)";
+      counts[s] = (counts[s] || 0) + 1;
+    });
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const current = elements.sourceFilter.value || "all";
+    elements.sourceFilter.innerHTML = `<option value="all">すべて (${formatNumber(channels.length)})</option>` +
+      sorted.map(([key, n]) => `<option value="${escapeHtml(key)}">${escapeHtml(key)} (${formatNumber(n)})</option>`).join("");
+    elements.sourceFilter.value = current;
+  }
+
   function init() {
     elements.generatedAt.textContent = formatDate(data.summary.generatedAt);
     initSourceMeta();
     initFeedbackLinks();
     renderPeriodDashboard();
     renderSummary();
+    populateSourceFilter();
     renderResultTabs();
     renderRows();
-    [elements.searchInput, elements.confidenceFilter, elements.personaFilter, elements.sortSelect].forEach((element) => {
+    [elements.searchInput, elements.confidenceFilter, elements.personaFilter, elements.sourceFilter, elements.sortSelect].forEach((element) => {
       if (!element) return;
       element.addEventListener("input", () => {
         visibleLimit = listPageSize;
-        renderResultTabs();
         renderRows();
       });
       element.addEventListener("change", () => {
         visibleLimit = listPageSize;
-        renderResultTabs();
         renderRows();
       });
     });
