@@ -7,7 +7,7 @@
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' https://yt3.ggpht.com https://yt3.googleusercontent.com data:; font-src 'self' data:; connect-src https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'; upgrade-insecure-requests">
     <title>YouTube収益化停止 可能性リスト</title>
-    <link rel="stylesheet" href="assets/styles.css?v=20260429-proxy1">
+    <link rel="stylesheet" href="assets/styles.css?v=20260429-readable1">
   </head>
   <body>
     <header class="site-header">
@@ -59,10 +59,10 @@
         <div class="dashboard-head">
           <div>
             <p class="section-label">半期別比較</p>
-            <h2>現在広告シグナル非表示率（proxy）の推移</h2>
+            <h2>現在、広告が確認できなかった割合の推移</h2>
             <p class="dashboard-lead">
-              各半期に投稿が観測され、現在の広告シグナル判定が明確なチャンネルのうち、
-              現在広告シグナルが非表示寄りの割合です。停止日や公式収益化状態を示すものではありません。
+              各半期に投稿が確認できたチャンネルのうち、現在の確認で「広告あり」か「広告なし」まで判定できたものを対象に、
+              広告が確認できなかった割合を表示しています。停止日や公式収益化状態を示すものではありません。
             </p>
           </div>
         </div>
@@ -71,7 +71,7 @@
         <article class="dashboard-panel dashboard-panel-wide">
           <div class="panel-head">
             <h3>半期別推移</h3>
-            <p>分母: likely_monetized + likely_not_monetized / 横軸: 投稿があった時期</p>
+            <p>対象: 広告あり・広告なしまで判定できたチャンネル / 横軸: 投稿があった時期</p>
           </div>
           <div class="rate-chart" id="prevalenceChart"></div>
         </article>
@@ -82,7 +82,7 @@
               <thead>
                 <tr>
                   <th>時期</th>
-                  <th>現在広告シグナル非表示率</th>
+                  <th>広告が確認できなかった割合</th>
                   <th>前の半期との差</th>
                   <th>分子 / 分母</th>
                   <th>保留 / 失敗</th>
@@ -95,7 +95,7 @@
         <article class="dashboard-panel dashboard-panel-wide persona-prevalence-panel">
           <div class="panel-head">
             <h3>属人 / 非属人別の推移</h3>
-            <p>同じproxy定義でチャンネル種別ごとに分けた比較</p>
+            <p>同じ計算方法でチャンネル種別ごとに分けた比較</p>
           </div>
           <div class="persona-prevalence-summary" id="personaPrevalenceSummary"></div>
           <div class="rate-chart" id="personaPrevalenceChart"></div>
@@ -228,8 +228,8 @@
       </section>
     </main>
 
-    <script src="assets/data.js?v=20260429-proxy1"></script>
-    <script src="assets/app.js?v=20260429-proxy1"></script>
+    <script src="assets/data.js?v=20260429-readable1"></script>
+    <script src="assets/app.js?v=20260429-readable1"></script>
     <!-- Cloudflare Web Analytics -->
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "ef2305f18ca64c5dab2f9a0f2eccdabe"}'></script>
     <!-- End Cloudflare Web Analytics -->

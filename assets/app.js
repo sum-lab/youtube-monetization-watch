@@ -406,15 +406,15 @@
         : `${formatAbsPoints(latest.previousRateDeltaPoints)}${Number(latest.previousRateDeltaPoints || 0) > 0 ? "上昇" : "低下"}`;
     elements.dashboardVerdict.innerHTML = `
       <div class="verdict-main">
-        <span>proxy比較</span>
-        <strong>${escapeHtml(formatPeriod(latest.period))}の現在広告シグナル非表示率は過去平均を${escapeHtml(averageDirection)}</strong>
+        <span>比較</span>
+        <strong>${escapeHtml(formatPeriod(latest.period))}の広告が確認できなかった割合は過去平均を${escapeHtml(averageDirection)}</strong>
       </div>
       <p>
         現在値は${escapeHtml(formatPercent(latest.currentLikelyNotRateAmongChecked))}（${formatNumber(latest.currentLikelyNotActiveChannels || 0)} / ${formatNumber(latest.activeChannelsWithAdResult || 0)}）。
         2023〜2025年平均${escapeHtml(formatPercent(pastAverage))}${escapeHtml(averagePhrase)}、
         過去最高${escapeHtml(formatPercent(highest.currentLikelyNotRateAmongChecked))}（${escapeHtml(formatPeriod(highest.period))}）と比較しています。
         直前の${escapeHtml(formatPeriod(previous.period))}からは${escapeHtml(previousPhrase)}。
-        これは停止発生日ではなく、現在時点の公開広告シグナルです。
+        これは停止発生日ではなく、現在時点で外部から広告表示を確認した結果です。
       </p>
     `;
   }
@@ -430,7 +430,7 @@
     const highest = highestRateRow(rows) || {};
     const cards = [
       {
-        label: "現在非表示率",
+        label: "広告なし割合",
         value: formatPercent(latest.currentLikelyNotRateAmongChecked),
         detail: formatPeriod(latest.period),
         tone: "blue",
@@ -520,9 +520,9 @@
       })
       .join("");
     elements.prevalenceChart.innerHTML = `
-      <svg class="dashboard-line-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="半期別の現在広告シグナル非表示率 proxy">
-        <title>半期別の現在広告シグナル非表示率 proxy</title>
-        <text class="dashboard-chart-axis-title" x="${margin.left}" y="22">現在広告シグナル非表示率（proxy, %）</text>
+      <svg class="dashboard-line-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="半期別の広告が確認できなかった割合">
+        <title>半期別の広告が確認できなかった割合</title>
+        <text class="dashboard-chart-axis-title" x="${margin.left}" y="22">広告が確認できなかった割合（%）</text>
         ${grid}
         ${averageLine}
         <line class="dashboard-chart-axis" x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}"></line>
@@ -587,8 +587,8 @@
           .join("")}
       </div>
       <p>
-        ${escapeHtml(formatPeriod(latest.period))}の現在広告シグナル非表示率は、非属人が属人より${escapeHtml(formatAbsPoints(gap))}高い状態です。
-        これは停止発生日ではなく、現在時点のproxyをチャンネル種別別に見た補助線です。
+        ${escapeHtml(formatPeriod(latest.period))}の広告が確認できなかった割合は、非属人が属人より${escapeHtml(formatAbsPoints(gap))}高い状態です。
+        これは停止発生日ではなく、現在時点で外部から広告表示を確認した結果をチャンネル種別別に見た補助線です。
       </p>
     `;
   }
@@ -680,7 +680,7 @@
     elements.personaPrevalenceChart.innerHTML = `
       <svg class="dashboard-line-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="属人と非属人の半期別推移">
         <title>属人と非属人の半期別推移</title>
-        <text class="dashboard-chart-axis-title" x="${margin.left}" y="22">現在広告シグナル非表示率（proxy, %）</text>
+        <text class="dashboard-chart-axis-title" x="${margin.left}" y="22">広告が確認できなかった割合（%）</text>
         ${legend}
         ${grid}
         <line class="dashboard-chart-axis" x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}"></line>
@@ -765,7 +765,7 @@
     if (!elements.dashboardNote || !semiannualDashboard) return;
     elements.dashboardNote.textContent = [
       `作成基準日: ${semiannualDashboard.asOf || "-"}`,
-      "主率は当該半期に投稿が観測され、現在の広告シグナルがlikely_monetizedまたはlikely_not_monetizedに分類できたチャンネルを母数にしています。",
+      "主率は当該半期に投稿が観測され、現在の確認で広告あり・広告なしのどちらかまで判定できたチャンネルを母数にしています。",
       "YouTube公式の収益化状態・停止日・停止発生日を示すものではありません。",
       "同一チャンネルが複数半期に含まれ、2026年上半期は期間途中の速報値です。",
     ].join(" / ");
