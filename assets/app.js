@@ -45,6 +45,7 @@
     personaPrevalenceSummary: document.getElementById("personaPrevalenceSummary"),
     personaPrevalenceChart: document.getElementById("personaPrevalenceChart"),
     personaPrevalenceRows: document.getElementById("personaPrevalenceRows"),
+    inactivityCandidateRows: document.getElementById("inactivityCandidateRows"),
     dashboardNote: document.getElementById("dashboardNote"),
   };
 
@@ -376,6 +377,15 @@
     return rate === null ? "-" : `${formatPercent(rate)}（${personaFraction(segment)}）`;
   }
 
+  function rateWithWilson(row) {
+    const rate = row.currentLikelyNotRateAmongChecked;
+    if (rate === null || rate === undefined) return "-";
+    if (row.wilson95Low === null || row.wilson95Low === undefined || row.wilson95High === null || row.wilson95High === undefined) {
+      return formatPercent(rate);
+    }
+    return `${formatPercent(rate)}（95%CI ${formatPercent(row.wilson95Low)}〜${formatPercent(row.wilson95High)}）`;
+  }
+
   function renderDashboardVerdict() {
     if (!elements.dashboardVerdict || !semiannualDashboard) return;
     const rows = semiannualDashboard.prevalence || [];
@@ -396,14 +406,15 @@
         : `${formatAbsPoints(latest.previousRateDeltaPoints)}${Number(latest.previousRateDeltaPoints || 0) > 0 ? "上昇" : "低下"}`;
     elements.dashboardVerdict.innerHTML = `
       <div class="verdict-main">
-        <span>比較結果</span>
-        <strong>${escapeHtml(formatPeriod(latest.period))}は過去平均を${escapeHtml(averageDirection)}</strong>
+        <span>proxy比較</span>
+        <strong>${escapeHtml(formatPeriod(latest.period))}の現在広告シグナル非表示率は過去平均を${escapeHtml(averageDirection)}</strong>
       </div>
       <p>
-        現在値は${escapeHtml(formatPercent(latest.currentLikelyNotRateAmongChecked))}。
+        現在値は${escapeHtml(formatPercent(latest.currentLikelyNotRateAmongChecked))}（${formatNumber(latest.currentLikelyNotActiveChannels || 0)} / ${formatNumber(latest.activeChannelsWithAdResult || 0)}）。
         2023〜2025年平均${escapeHtml(formatPercent(pastAverage))}${escapeHtml(averagePhrase)}、
-        過去最高${escapeHtml(formatPercent(highest.currentLikelyNotRateAmongChecked))}（${escapeHtml(formatPeriod(highest.period))}）を下回ります。
+        過去最高${escapeHtml(formatPercent(highest.currentLikelyNotRateAmongChecked))}（${escapeHtml(formatPeriod(highest.period))}）と比較しています。
         直前の${escapeHtml(formatPeriod(previous.period))}からは${escapeHtml(previousPhrase)}。
+        これは停止発生日ではなく、現在時点の公開広告シグナルです。
       </p>
     `;
   }
@@ -419,7 +430,7 @@
     const highest = highestRateRow(rows) || {};
     const cards = [
       {
-        label: "現在値",
+        label: "現在非表示率",
         value: formatPercent(latest.currentLikelyNotRateAmongChecked),
         detail: formatPeriod(latest.period),
         tone: "blue",
@@ -437,9 +448,9 @@
         tone: "gray",
       },
       {
-        label: "過去最高",
-        value: formatPercent(highest.currentLikelyNotRateAmongChecked),
-        detail: formatPeriod(highest.period),
+        label: "判定母数",
+        value: formatNumber(latest.activeChannelsWithAdResult),
+        detail: `非表示 ${formatNumber(latest.currentLikelyNotActiveChannels || 0)}`,
         tone: "black",
       },
     ];
@@ -509,9 +520,9 @@
       })
       .join("");
     elements.prevalenceChart.innerHTML = `
-      <svg class="dashboard-line-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="半期別の収益化停止・未収益化率">
-        <title>半期別の収益化停止・未収益化率</title>
-        <text class="dashboard-chart-axis-title" x="${margin.left}" y="22">収益化停止・未収益化率（%）</text>
+      <svg class="dashboard-line-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="半期別の現在広告シグナル非表示率 proxy">
+        <title>半期別の現在広告シグナル非表示率 proxy</title>
+        <text class="dashboard-chart-axis-title" x="${margin.left}" y="22">現在広告シグナル非表示率（proxy, %）</text>
         ${grid}
         ${averageLine}
         <line class="dashboard-chart-axis" x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}"></line>
@@ -576,8 +587,8 @@
           .join("")}
       </div>
       <p>
-        ${escapeHtml(formatPeriod(latest.period))}は、非属人が属人より${escapeHtml(formatAbsPoints(gap))}高い状態です。
-        全体の変化を見るための補助線として、チャンネル種別別にも確認しています。
+        ${escapeHtml(formatPeriod(latest.period))}の現在広告シグナル非表示率は、非属人が属人より${escapeHtml(formatAbsPoints(gap))}高い状態です。
+        これは停止発生日ではなく、現在時点のproxyをチャンネル種別別に見た補助線です。
       </p>
     `;
   }
@@ -669,7 +680,7 @@
     elements.personaPrevalenceChart.innerHTML = `
       <svg class="dashboard-line-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="属人と非属人の半期別推移">
         <title>属人と非属人の半期別推移</title>
-        <text class="dashboard-chart-axis-title" x="${margin.left}" y="22">収益化停止・未収益化率（%）</text>
+        <text class="dashboard-chart-axis-title" x="${margin.left}" y="22">現在広告シグナル非表示率（proxy, %）</text>
         ${legend}
         ${grid}
         <line class="dashboard-chart-axis" x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}"></line>
@@ -689,9 +700,39 @@
         return `
           <tr>
             <td>${escapeHtml(formatPeriod(row.period))}</td>
-            <td>${escapeHtml(formatPercent(row.currentLikelyNotRateAmongChecked))}</td>
+            <td>${escapeHtml(rateWithWilson(row))}</td>
             <td>${escapeHtml(formatSignedPoints(row.previousRateDeltaPoints))}</td>
-            <td>${formatNumber(row.activeChannelsWithAdResult)}</td>
+            <td>${formatNumber(row.currentLikelyNotActiveChannels || 0)} / ${formatNumber(row.activeChannelsWithAdResult || 0)}</td>
+            <td>${formatNumber(row.inconclusiveActiveChannels || 0)} / ${formatNumber(row.failedAdResultActiveChannels || 0)}</td>
+          </tr>
+        `;
+      })
+      .join("");
+  }
+
+  function renderInactivityCandidateTable() {
+    if (!elements.inactivityCandidateRows || !semiannualDashboard) return;
+    const threshold = semiannualDashboard.mainThresholdDays || 30;
+    const rows = (semiannualDashboard.incidence || []).filter((row) => Number(row.thresholdDays) === Number(threshold));
+    elements.inactivityCandidateRows.innerHTML = rows
+      .map((row) => {
+        const unresolved = [
+          row.inconclusiveInactiveCandidates || 0,
+          row.failedAdResultInactiveCandidates || 0,
+          row.missingAdResultInactiveCandidates || 0,
+        ];
+        const status =
+          row.displayStatus === "display_proxy_rate_with_caution"
+            ? "参考率表示可"
+            : "内訳のみ";
+        return `
+          <tr>
+            <td>${escapeHtml(formatPeriod(row.period))}</td>
+            <td>${formatNumber(row.activeChannelsInEventWindow || 0)}</td>
+            <td>${formatNumber(row.inactiveCandidatesAllResults || 0)}<br><small>${escapeHtml(status)}</small></td>
+            <td>${formatNumber(row.inactiveCandidatesWithDecisiveAdResult || 0)}<br><small>カバー率 ${escapeHtml(formatPercent(row.candidateDecisiveCoverageRate))}</small></td>
+            <td>${formatNumber(row.likelyNotInactiveEvents || 0)}</td>
+            <td>${unresolved.map(formatNumber).join(" / ")}</td>
           </tr>
         `;
       })
@@ -724,8 +765,9 @@
     if (!elements.dashboardNote || !semiannualDashboard) return;
     elements.dashboardNote.textContent = [
       `作成基準日: ${semiannualDashboard.asOf || "-"}`,
-      "公開動画から機械的に推定した暫定値です。",
-      "2026年上半期は期間途中の速報値です。",
+      "主率は当該半期に投稿が観測され、現在の広告シグナルがlikely_monetizedまたはlikely_not_monetizedに分類できたチャンネルを母数にしています。",
+      "YouTube公式の収益化状態・停止日・停止発生日を示すものではありません。",
+      "同一チャンネルが複数半期に含まれ、2026年上半期は期間途中の速報値です。",
     ].join(" / ");
   }
 
@@ -742,6 +784,7 @@
     renderPersonaPrevalenceSummary();
     renderPersonaPrevalenceChart();
     renderPersonaPrevalenceTable();
+    renderInactivityCandidateTable();
     renderDashboardNote();
   }
 

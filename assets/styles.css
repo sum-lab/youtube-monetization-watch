@@ -737,7 +737,7 @@ main {
 }
 
 .dashboard-table {
-  min-width: 640px;
+  min-width: 760px;
 }
 
 .dashboard-table th {
@@ -747,6 +747,14 @@ main {
 
 .dashboard-table tbody tr:nth-child(even) {
   background: #f8f8fb;
+}
+
+.dashboard-table small {
+  display: block;
+  margin-top: 2px;
+  color: #626264;
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 
 .dashboard-note {
